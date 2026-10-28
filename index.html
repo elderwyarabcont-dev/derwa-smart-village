@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- EmailJS SDK -->
+    <!-- EmailJS SDK for Secure Admin Email OTP Sending -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
@@ -48,6 +48,9 @@
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
         }
         ::-webkit-scrollbar-thumb {
             background: rgba(16, 185, 129, 0.3);
@@ -141,49 +144,7 @@
                 </div>
             </div>
 
-            <!-- Admin Messages & Quick Banners -->
-            <div class="space-y-3">
-                <div onclick="switchTab('more')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-bullhorn"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerAdminMsgTitle" class="font-bold text-sm">رسائل الإدارة</h4>
-                            <p id="bannerAdminMsgDesc" class="text-xs text-slate-400">لا توجد رسائل من الإدارة حالياً</p>
-                        </div>
-                    </div>
-                    <span id="viewAllText1" class="text-xs text-slate-500 group-hover:text-primary transition">عرض الكل <i class="fa-solid fa-angle-left mr-1"></i></span>
-                </div>
-
-                <div onclick="switchTab('offers')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-tags"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerOffersTitle" class="font-bold text-sm">عروض داخل القرية</h4>
-                            <p id="bannerOffersDesc" class="text-xs text-slate-400">لا توجد عروض منشورة حالياً</p>
-                        </div>
-                    </div>
-                    <span id="viewAllText2" class="text-xs text-slate-500 group-hover:text-primary transition">عرض الكل <i class="fa-solid fa-angle-left mr-1"></i></span>
-                </div>
-
-                <div onclick="switchTab('jobs')" class="bg-cardBg border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-briefcase"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerJobsTitle" class="font-bold text-sm">وظائف داخل القرية</h4>
-                            <p id="bannerJobsDesc" class="text-xs text-slate-400">لا توجد وظائف منشورة حالياً</p>
-                        </div>
-                    </div>
-                    <span id="viewAllText3" class="text-xs text-slate-500 group-hover:text-amber-400 transition">عرض الكل <i class="fa-solid fa-angle-left mr-1"></i></span>
-                </div>
-            </div>
-
-            <!-- Directory Sections Grid (أقسام الدليل بأيقونات أصغر وأنيقة مريحة للشاشة الرئيسية) -->
+            <!-- Directory Sections Grid -->
             <div class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 id="directoryTitle" class="font-extrabold text-lg flex items-center">
@@ -196,54 +157,6 @@
                     <!-- Populated dynamically -->
                 </div>
             </div>
-
-            <!-- Action Banners -->
-            <div class="space-y-3 pt-2">
-                <div onclick="switchTab('join')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-xl group-hover:scale-105 transition">
-                            <i class="fa-solid fa-user-plus"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerJoinTitle" class="font-bold text-sm">أضف نفسك للدليل</h4>
-                            <p id="bannerJoinDesc" class="text-xs text-slate-400 mt-0.5">سجل اسمك ومهنتك ورقم هاتفك ليصل أهالي القرية إليك</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-angle-left text-slate-500 group-hover:text-primary transition"></i>
-                </div>
-
-                <div onclick="switchTab('jobs')" class="bg-cardBg border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl group-hover:scale-105 transition">
-                            <i class="fa-solid fa-briefcase"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerJobsMainTitle" class="font-bold text-sm">فرص العمل بالقرية</h4>
-                            <p id="bannerJobsMainDesc" class="text-xs text-slate-400 mt-0.5">وظائف المحلات والمصالح لأبناء دروة</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-angle-left text-slate-500 group-hover:text-amber-400 transition"></i>
-                </div>
-
-                <div onclick="openContactModal()" class="bg-cardBg border border-slate-800 hover:border-blue-500/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl group-hover:scale-105 transition">
-                            <i class="fa-solid fa-headset"></i>
-                        </div>
-                        <div>
-                            <h4 id="bannerContactTitle" class="font-bold text-sm">تواصل مع الإدارة</h4>
-                            <p id="bannerContactDesc" class="text-xs text-slate-400 mt-0.5">استفسار، اقتراح، أو تصحيح بيانات</p>
-                        </div>
-                    </div>
-                    <i class="fa-solid fa-angle-left text-slate-500 group-hover:text-blue-400 transition"></i>
-                </div>
-            </div>
-
-            <div class="text-center pt-4 pb-2">
-                <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 1.0
-                </span>
-            </div>
         </div>
 
         <!-- ================= SECTION 2: OFFERS TAB ================= -->
@@ -251,16 +164,13 @@
             <div class="flex justify-between items-center bg-cardBg border border-slate-800 p-5 rounded-2xl">
                 <div>
                     <h3 id="offersHeaderTitle" class="font-extrabold text-lg">عروض داخل القرية</h3>
-                    <p id="offersHeaderSub" class="text-xs text-slate-400 mt-0.5">عروض المحلات التجارية مرتبة رأسياً تحت بعضها، معتمدة من الإدارة</p>
+                    <p id="offersHeaderSub" class="text-xs text-slate-400 mt-0.5">عروض المحلات التجارية مرتبة رأسياً</p>
                 </div>
-                <button onclick="openAddOfferModal()" class="bg-primary text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg shadow-primary/20">
-                    <i class="fa-solid fa-plus ml-1.5"></i> <span id="addOfferBtnText">أضف عرضك</span>
+                <button onclick="openAddOfferModal()" class="bg-primary text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg">
+                    <i class="fa-solid fa-plus ml-1.5"></i> أضف عرضك
                 </button>
             </div>
-
-            <div id="offersContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto">
-                <!-- Populated dynamically -->
-            </div>
+            <div id="offersContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto"></div>
         </div>
 
         <!-- ================= SECTION 3: JOBS TAB ================= -->
@@ -268,154 +178,90 @@
             <div class="flex justify-between items-center bg-cardBg border border-slate-800 p-5 rounded-2xl">
                 <div>
                     <h3 id="jobsHeaderTitle" class="font-extrabold text-lg">فرص العمل بالقرية</h3>
-                    <p id="jobsHeaderSub" class="text-xs text-slate-400 mt-0.5">وظائف المحلات والمصالح داخل دروة مرتبة رأسياً</p>
+                    <p id="jobsHeaderSub" class="text-xs text-slate-400 mt-0.5">وظائف المحلات والمصالح داخل دروة</p>
                 </div>
-                <button onclick="openAddJobModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg shadow-amber-500/20">
-                    <i class="fa-solid fa-plus ml-1.5"></i> <span id="addJobBtnText">أضف وظيفة</span>
+                <button onclick="openAddJobModal()" class="bg-amber-500 text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg">
+                    <i class="fa-solid fa-plus ml-1.5"></i> أضف وظيفة
                 </button>
             </div>
-
-            <div id="jobsContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto">
-                <!-- Populated dynamically -->
-            </div>
+            <div id="jobsContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto"></div>
         </div>
 
         <!-- ================= SECTION 4: JOIN TAB ================= -->
         <div id="tabJoin" class="tab-content hidden space-y-6">
             <div class="bg-cardBg border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl max-w-xl mx-auto">
-                <div class="flex justify-between items-center">
+                <div class="flex flex-wrap justify-between items-center gap-3">
                     <div>
-                        <h3 id="joinHeaderTitle" class="font-extrabold text-xl mb-1">اقتراح إضافة / انضم إلى الدليل</h3>
-                        <p id="joinHeaderSub" class="text-xs text-slate-400">سجل بياناتك (الاسم، القسم الرئيسي، الفرعي، العنوان التفصيلي، الهاتف) ليصل إليك أهالي القرية</p>
+                        <h3 class="font-extrabold text-xl mb-1">انضم إلينا (إضافة جهة أو طبيب أو سائق)</h3>
+                        <p class="text-xs text-slate-400">سجل بياناتك أو استورد من جهات الاتصال بهاتفك مباشرة (تخضع للمراجعة)</p>
                     </div>
-                    <button type="button" onclick="pickContactFromDevice()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-primary font-bold rounded-xl text-xs transition flex items-center border border-slate-700 shadow">
-                        <i class="fa-solid fa-address-book ml-1.5"></i> اختيار من جهات الاتصال
+                    <button type="button" onclick="pickContactFromDevice('join')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition flex items-center shadow-lg">
+                        <i class="fa-solid fa-address-book ml-1.5"></i> استيراد من جهات الاتصال
                     </button>
                 </div>
-
                 <form onsubmit="submitJoinDirectly(event)" class="space-y-4 text-xs">
                     <div>
-                        <label id="labelJoinName" class="block text-slate-300 mb-1 font-semibold">الاسم أو اسم المحل / العيادة *</label>
-                        <input type="text" id="joinName" required placeholder="مثال: د. عمر عبدالقادر / صيدلية الشفاء" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary">
+                        <label class="block text-slate-300 mb-1 font-semibold">الاسم أو اسم المحل / العيادة / السائق *</label>
+                        <input type="text" id="joinName" required placeholder="مثال: د. عمر / صيدلية الشفاء / كابتن محمود" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100">
                     </div>
-                    
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label id="labelJoinMainCat" class="block text-slate-300 mb-1 font-semibold">القسم الرئيسي *</label>
-                            <select id="joinMainCat" onchange="populateJoinSubCats()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary">
-                                <!-- Populated by JS -->
-                            </select>
+                            <label class="block text-slate-300 mb-1 font-semibold">القسم الرئيسي *</label>
+                            <select id="joinMainCat" onchange="populateJoinSubCats()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100"></select>
                         </div>
                         <div>
-                            <label id="labelJoinSubCat" class="block text-slate-300 mb-1 font-semibold">القسم الفرعي *</label>
-                            <select id="joinSubCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary">
-                                <!-- Populated by JS -->
-                            </select>
+                            <label class="block text-slate-300 mb-1 font-semibold">القسم الفرعي *</label>
+                            <select id="joinSubCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100"></select>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label id="labelJoinPhone" class="block text-slate-300 mb-1 font-semibold">رقم الهاتف *</label>
-                            <input type="text" id="joinPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary font-mono">
+                            <label class="block text-slate-300 mb-1 font-semibold">رقم الهاتف *</label>
+                            <input type="text" id="joinPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-mono">
                         </div>
                         <div>
-                            <label id="labelJoinWhatsapp" class="block text-slate-300 mb-1 font-semibold">رقم واتساب (اختياري)</label>
-                            <input type="text" id="joinWhatsapp" placeholder="201012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary font-mono">
+                            <label class="block text-slate-300 mb-1 font-semibold">رقم واتساب (اختياري)</label>
+                            <input type="text" id="joinWhatsapp" placeholder="201012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-mono">
                         </div>
                     </div>
-
                     <div>
-                        <label id="labelJoinAddress" class="block text-slate-300 mb-1 font-semibold">العنوان التفصيلي / رقم العيادة أو المعمل / خط السير *</label>
-                        <input type="text" id="joinAddress" required placeholder="مثال: شارع المركز الرئيسي بجوار المعمل - دروة" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-primary">
+                        <label class="block text-slate-300 mb-1 font-semibold">العنوان التفصيلي / خط السير *</label>
+                        <input type="text" id="joinAddress" required placeholder="شارع المركز - دروة / موقف القاهرة" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100">
                     </div>
-
-                    <button type="submit" id="submitJoinBtnText" class="w-full py-3.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-primary/20">
-                        إرسال الطلب مباشرة لوحة تحكم الإدارة
-                    </button>
+                    <button type="submit" class="w-full py-3.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg">إرسال الطلب للإدارة (بانتظار الموافقة)</button>
                 </form>
             </div>
         </div>
 
-        <!-- ================= SECTION 5: MORE / ADMIN TAB ================= -->
+        <!-- ================= SECTION 5: MORE TAB ================= -->
         <div id="tabMore" class="tab-content hidden space-y-6">
             <div class="space-y-4 max-w-xl mx-auto">
                 <div class="text-right px-2">
-                    <h3 id="moreHeaderTitle" class="text-xl font-extrabold">المزيد</h3>
-                    <p id="moreHeaderSub" class="text-xs text-slate-400">الدليل الذكى لقرية دروة مركز ملوى</p>
+                    <h3 class="text-xl font-extrabold">المزيد</h3>
                 </div>
-
-                <!-- App Banner Card -->
-                <div class="bg-cardBg border border-slate-800 rounded-2xl p-5 flex items-center space-x-4 space-x-reverse shadow-lg">
-                    <div class="w-12 h-12 rounded-2xl overflow-hidden border border-primary/40 bg-slate-950 flex items-center justify-center flex-shrink-0">
-                        <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=100&h=100&fit=crop" alt="Logo" class="w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h4 class="font-bold text-base">الدليل الذكى لقرية دروة مركز ملوى</h4>
-                        <p id="bannerVillageInfo" class="text-xs text-slate-400">قرية دروة — مركز ملوي — المنيا</p>
-                    </div>
-                </div>
-
-                <!-- Menu Items -->
                 <div class="bg-cardBg border border-slate-800 rounded-2xl overflow-hidden divide-y divide-slate-800/80 text-sm">
-                    <div onclick="openNotificationsModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-bullhorn text-primary text-lg ml-3"></i>
-                            <span id="menuNotifText">رسائل الإدارة</span>
-                        </div>
-                        <i class="fa-solid fa-angle-left text-slate-500"></i>
-                    </div>
-
                     <div onclick="openSettingsModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-gear text-primary text-lg ml-3"></i>
-                            <span id="menuSettingsText">الإعدادات</span>
-                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse"><i class="fa-solid fa-gear text-primary text-lg ml-3"></i><span>الإعدادات</span></div>
                         <i class="fa-solid fa-angle-left text-slate-500"></i>
                     </div>
-
                     <div onclick="openDeveloperModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-user-gear text-primary text-lg ml-3"></i>
-                            <span id="menuDeveloperText">صانع التطبيق</span>
-                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse"><i class="fa-solid fa-user-gear text-primary text-lg ml-3"></i><span>صانع التطبيق</span></div>
                         <i class="fa-solid fa-angle-left text-slate-500"></i>
                     </div>
-
                     <div onclick="openAboutModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-circle-info text-primary text-lg ml-3"></i>
-                            <span id="menuAboutText">عن التطبيق</span>
-                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse"><i class="fa-solid fa-circle-info text-primary text-lg ml-3"></i><span>عن التطبيق</span></div>
                         <i class="fa-solid fa-angle-left text-slate-500"></i>
                     </div>
-
                     <div onclick="openPrivacyModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-shield-halved text-primary text-lg ml-3"></i>
-                            <span id="menuPrivacyText">سياسة الخصوصية</span>
-                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse"><i class="fa-solid fa-shield-halved text-primary text-lg ml-3"></i><span>سياسة الخصوصية</span></div>
                         <i class="fa-solid fa-angle-left text-slate-500"></i>
                     </div>
-
                     <div onclick="openContactModal()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-headset text-primary text-lg ml-3"></i>
-                            <span id="menuContactText">تواصل مع الإدارة</span>
-                        </div>
-                        <i class="fa-solid fa-angle-left text-slate-500"></i>
-                    </div>
-
-                    <div onclick="shareApp()" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/50 transition">
-                        <div class="flex items-center space-x-3 space-x-reverse">
-                            <i class="fa-solid fa-share-nodes text-primary text-lg ml-3"></i>
-                            <span id="menuShareText">مشاركة التطبيق</span>
-                        </div>
+                        <div class="flex items-center space-x-3 space-x-reverse"><i class="fa-solid fa-headset text-primary text-lg ml-3"></i><span>تواصل مع الإدارة</span></div>
                         <i class="fa-solid fa-angle-left text-slate-500"></i>
                     </div>
                 </div>
 
-                <!-- Doctor & Driver Mini-Dashboard Access Button -->
                 <div onclick="switchTab('provider')" class="bg-cardBg border border-blue-500/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 transition shadow-lg">
                     <div class="flex items-center space-x-3 space-x-reverse text-blue-400 font-bold">
                         <i class="fa-solid fa-calendar-check text-xl ml-3"></i>
@@ -424,127 +270,89 @@
                     <i class="fa-solid fa-angle-left text-blue-400"></i>
                 </div>
 
-                <!-- Admin Login Access Button -->
                 <div onclick="openAdminLoginArea()" class="bg-cardBg border border-emerald-500/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 transition shadow-lg">
                     <div class="flex items-center space-x-3 space-x-reverse text-primary font-bold">
                         <i class="fa-solid fa-shield-halved text-xl ml-3"></i>
-                        <span id="menuAdminLoginText">دخول صفحة خدمات المسؤول المستقلة</span>
+                        <span>دخول صفحة خدمات المسؤول المستقلة</span>
                     </div>
                     <i class="fa-solid fa-angle-left text-primary"></i>
                 </div>
             </div>
         </div>
 
-        <!-- ================= SECTION 5.5: DOCTOR & DRIVER MINI-DASHBOARD ================= -->
+        <!-- ================= SECTION 5.5: DOCTOR & DRIVER DASHBOARD ================= -->
         <div id="tabProvider" class="tab-content hidden space-y-5 max-w-2xl mx-auto">
-            <div class="bg-gradient-to-r from-slate-900 via-cardBg to-slate-900 border border-blue-500/30 rounded-3xl p-5 flex flex-wrap justify-between items-center gap-4 shadow-xl">
+            <div class="bg-cardBg border border-blue-500/30 rounded-3xl p-5 flex justify-between items-center shadow-xl">
                 <div class="flex items-center space-x-3 space-x-reverse">
                     <div class="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-xl font-bold border border-blue-500/30">
                         <i class="fa-solid fa-clipboard-user"></i>
                     </div>
                     <div>
-                        <h3 class="font-extrabold text-base md:text-lg text-white">لوحة حجوزات الأطباء والسائقين</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">متابعة فورية للركاب والمرضى المسجلين اليوم</p>
+                        <h3 class="font-extrabold text-base text-white">لوحة حجوزات الأطباء والسائقين</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">متابعة فورية للحجوزات بكود PIN</p>
                     </div>
                 </div>
-                <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center">
-                    <i class="fa-solid fa-house ml-1.5"></i> الرئيسية
-                </button>
+                <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold transition">الرئيسية</button>
             </div>
-
             <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl text-xs">
-                <label class="block text-slate-300 font-bold text-sm">اختر العيادة أو خط الميكروباص لعرض كشف الحجوزات الحالية:</label>
-                <select id="providerSelectDropdown" onchange="renderProviderDashboard()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-blue-400 font-bold">
-                    <!-- Populated dynamically -->
-                </select>
-
-                <div id="providerDashboardContent" class="pt-3 space-y-3">
-                    <!-- Populated dynamically -->
-                </div>
+                <label class="block text-slate-300 font-bold text-sm">اختر العيادة أو خط الميكروباص لعرض كشف الحجوزات:</label>
+                <select id="providerSelectDropdown" onchange="renderProviderDashboard()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 font-bold focus:outline-none"></select>
+                <div id="providerDashboardContent" class="pt-3 space-y-3"></div>
             </div>
         </div>
 
         <!-- ================= SECTION 6: STANDALONE ADMIN SERVICES PAGE ================= -->
         <div id="tabAdmin" class="tab-content hidden space-y-5 max-w-3xl mx-auto">
-            
-            <div class="bg-gradient-to-r from-slate-900 via-cardBg to-slate-900 border border-primary/30 rounded-3xl p-5 flex flex-wrap justify-between items-center gap-4 shadow-xl">
+            <div class="bg-cardBg border border-primary/30 rounded-3xl p-5 flex justify-between items-center shadow-xl">
                 <div class="flex items-center space-x-3 space-x-reverse">
                     <div class="w-12 h-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center text-xl font-bold border border-primary/30">
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <div>
-                        <h3 id="adminDashTitle" class="font-extrabold text-base md:text-lg text-white">صفحة خدمات المسؤول المستقلة</h3>
+                        <h3 class="font-extrabold text-base text-white">صفحة خدمات المسؤول المستقلة</h3>
                         <p id="loggedInAdminEmailText" class="text-xs text-primary font-mono mt-0.5"></p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2 space-x-reverse">
-                    <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center">
-                        <i class="fa-solid fa-house ml-1.5"></i> الرئيسية
-                    </button>
-                    <button onclick="logoutAdmin()" id="logoutBtnText" class="px-3.5 py-2 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-slate-950 rounded-xl text-xs font-bold transition flex items-center">
-                        <i class="fa-solid fa-right-from-bracket ml-1.5"></i> خروج
-                    </button>
+                    <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 text-slate-200 rounded-xl text-xs font-bold transition">الرئيسية</button>
+                    <button onclick="logoutAdmin()" class="px-3.5 py-2 bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition">خروج</button>
                 </div>
             </div>
 
             <div class="grid grid-cols-4 gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
-                <button onclick="switchAdminSubTab('services')" id="admTabBtn_services" class="py-2.5 rounded-xl bg-primary text-slate-950 transition flex items-center justify-center">
-                    <i class="fa-solid fa-toolbox ml-1.5"></i> الإضافة المباشرة
-                </button>
-                <button onclick="switchAdminSubTab('pins')" id="admTabBtn_pins" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">
-                    <i class="fa-solid fa-key ml-1.5"></i> أكواد PIN للأطباء
-                </button>
-                <button onclick="switchAdminSubTab('approvals')" id="admTabBtn_approvals" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">
-                    <i class="fa-solid fa-list-check ml-1.5"></i> الطلبات والاعتماد
-                </button>
-                <button onclick="switchAdminSubTab('structure')" id="admTabBtn_structure" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">
-                    <i class="fa-solid fa-folder-tree ml-1.5"></i> البنود والمشرفين
-                </button>
+                <button onclick="switchAdminSubTab('services')" id="admTabBtn_services" class="py-2.5 rounded-xl bg-primary text-slate-950 transition flex items-center justify-center">الإضافة المباشرة</button>
+                <button onclick="switchAdminSubTab('pins')" id="admTabBtn_pins" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">أكواد PIN</button>
+                <button onclick="switchAdminSubTab('approvals')" id="admTabBtn_approvals" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">الطلبات والحذف</button>
+                <button onclick="switchAdminSubTab('structure')" id="admTabBtn_structure" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">البنود والمشرفين</button>
             </div>
 
-            <!-- SUB-SECTION 1: خدمات المسؤول -->
             <div id="admSub_services" class="admin-sub-tab bg-cardBg border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
-                <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-2 space-x-reverse text-primary">
-                        <i class="fa-solid fa-circle-plus text-lg"></i>
-                        <h4 class="font-extrabold text-base">إضافة مباشرة في الدليل</h4>
-                    </div>
-                    <span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">نشر فوري</span>
-                </div>
+                <h4 class="font-extrabold text-base text-primary">إضافة مباشرة في الدليل (نشر فوري دون انتظار)</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
-                    <button onclick="openAdminAddServiceModal()" class="p-4 bg-primary hover:opacity-95 text-slate-950 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                        <i class="fa-solid fa-user-plus text-2xl"></i>
-                        <span>إضافة شخص / عيادة / محل للبند</span>
+                    <button onclick="openAdminAddServiceModal()" class="p-4 bg-primary text-slate-950 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-user-plus text-2xl"></i><span>إضافة طبيب أو عيادة أو سائق أو محل</span>
                     </button>
-                    <button onclick="openAddCategoryModal()" class="p-4 bg-slate-950 hover:bg-slate-900 text-primary border border-primary/40 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg">
-                        <i class="fa-solid fa-folder-plus text-2xl"></i>
-                        <span>إضافة بند رئيسي أو فرعي جديد</span>
+                    <button onclick="openAddCategoryModal()" class="p-4 bg-slate-950 text-primary border border-primary/40 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-folder-plus text-2xl"></i><span>إضافة بند رئيسي أو فرعي</span>
                     </button>
                 </div>
             </div>
 
-            <!-- SUB-SECTION 2: إدارة أكواد PIN -->
             <div id="admSub_pins" class="admin-sub-tab hidden bg-cardBg border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
-                <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
-                    <div class="flex items-center space-x-2 space-x-reverse text-blue-400">
-                        <i class="fa-solid fa-key text-lg"></i>
-                        <h4 class="font-extrabold text-base">إدارة الأكواد السرية (PIN Code)</h4>
-                    </div>
-                </div>
+                <h4 class="font-extrabold text-base text-blue-400">إدارة الأكواد السرية (PIN Code) للأطباء وسائقين المواصلات فقط</h4>
                 <div id="adminPinsTableContainer" class="space-y-3 pt-2"></div>
             </div>
 
-            <!-- SUB-SECTION 3: الطلبات والاعتماد -->
             <div id="admSub_approvals" class="admin-sub-tab hidden bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
                 <div class="overflow-x-auto">
                     <table class="w-full text-right text-xs">
                         <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
                             <tr>
                                 <th class="p-3">الاسم / الجهة</th>
-                                <th class="p-3">البند التابع له</th>
+                                <th class="p-3">البند</th>
                                 <th class="p-3">الهاتف</th>
                                 <th class="p-3">الحالة</th>
-                                <th class="p-3 text-center">الإجراءات</th>
+                                <th class="p-3 text-center">الإجراءات (موافقة / رفض / حذف نهائي)</th>
                             </tr>
                         </thead>
                         <tbody id="adminApprovalTableBody" class="divide-y divide-slate-800"></tbody>
@@ -552,21 +360,21 @@
                 </div>
             </div>
 
-            <!-- SUB-SECTION 4: البنود والمشرفين -->
             <div id="admSub_structure" class="admin-sub-tab hidden space-y-5">
-                <div id="superAdminControls" class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-5 shadow-xl">
-                    <div id="adminCategoriesTreeContainer" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
-                    <div class="border-t border-slate-800 pt-5 space-y-3">
+                <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-5 shadow-xl">
+                    <h4 class="font-bold text-sm text-purple-400">هيكل البنود (للمدير الأساسي فقط)</h4>
+                    <div id="adminCategoriesTreeContainer" class="space-y-2.5 max-h-56 overflow-y-auto pr-1"></div>
+                    <div id="superAdminSupervisorSection" class="border-t border-slate-800 pt-4 space-y-3">
+                        <h4 class="font-bold text-sm text-purple-400">تعيين وإدارة المشرفين المساعدين (للمدير الأساسي فقط)</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <input type="text" id="newSuperName" placeholder="اسم المشرف" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
                             <input type="email" id="newSuperEmail" placeholder="البريد الإلكتروني" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
                         </div>
                         <button onclick="addNewSupervisor()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition shadow-lg">تعيين مشرف جديد</button>
-                        <div id="supervisorsListContainer" class="space-y-2 max-h-44 overflow-y-auto pt-2"></div>
+                        <div id="supervisorsListContainer" class="space-y-2 max-h-40 overflow-y-auto pt-2"></div>
                     </div>
                 </div>
             </div>
-
         </div>
 
     </main>
@@ -575,31 +383,24 @@
     <nav class="fixed bottom-0 left-0 right-0 bg-darkBg/95 backdrop-blur-md border-t border-slate-800/80 z-40 max-w-6xl mx-auto">
         <div class="grid grid-cols-5 h-16 text-center text-[11px] font-medium text-slate-400">
             <button onclick="switchTab('home')" id="navBtn_home" class="flex flex-col items-center justify-center space-y-1 text-primary transition">
-                <i class="fa-solid fa-house text-lg"></i>
-                <span id="navText_home">الرئيسية</span>
+                <i class="fa-solid fa-house text-lg"></i><span>الرئيسية</span>
             </button>
             <button onclick="switchTab('offers')" id="navBtn_offers" class="flex flex-col items-center justify-center space-y-1 hover:text-slate-200 transition">
-                <i class="fa-solid fa-tag text-lg"></i>
-                <span id="navText_offers">العروض</span>
+                <i class="fa-solid fa-tag text-lg"></i><span>العروض</span>
             </button>
             <button onclick="switchTab('jobs')" id="navBtn_jobs" class="flex flex-col items-center justify-center space-y-1 hover:text-slate-200 transition">
-                <i class="fa-solid fa-briefcase text-lg"></i>
-                <span id="navText_jobs">الوظائف</span>
+                <i class="fa-solid fa-briefcase text-lg"></i><span>الوظائف</span>
             </button>
             <button onclick="switchTab('join')" id="navBtn_join" class="flex flex-col items-center justify-center space-y-1 hover:text-slate-200 transition">
-                <i class="fa-solid fa-user-plus text-lg"></i>
-                <span id="navText_join">انضم إلينا</span>
+                <i class="fa-solid fa-user-plus text-lg"></i><span>انضم إلينا</span>
             </button>
             <button onclick="switchTab('more')" id="navBtn_more" class="flex flex-col items-center justify-center space-y-1 hover:text-slate-200 transition">
-                <i class="fa-solid fa-bars text-lg"></i>
-                <span id="navText_more">المزيد</span>
+                <i class="fa-solid fa-bars text-lg"></i><span>المزيد</span>
             </button>
         </div>
     </nav>
 
     <!-- ================= MODALS ================= -->
-
-    <!-- Category Detail View Modal -->
     <div id="categoryDetailModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-cardBg border border-slate-800 rounded-t-3xl sm:rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-4">
@@ -610,17 +411,22 @@
         </div>
     </div>
 
-    <!-- Admin Add Service Item Modal -->
+    <!-- Admin Add Service Modal -->
     <div id="adminAddServiceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sm text-primary flex items-center"><i class="fa-solid fa-user-plus ml-1.5"></i> خدمات المسؤول: إضافة مباشرة</h3>
+                <h3 class="font-bold text-sm text-primary">إضافة جهة أو طبيب أو سائق مباشرة</h3>
                 <button onclick="closeAdminAddServiceModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="flex justify-end pb-1">
+                <button type="button" onclick="pickContactFromDevice('admin')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-[11px] transition flex items-center shadow">
+                    <i class="fa-solid fa-address-book ml-1.5"></i> استيراد من جهات الاتصال
+                </button>
             </div>
             <form onsubmit="adminSaveServiceDirectly(event)" class="space-y-3">
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">اسم الشخص أو الجهة *</label>
-                    <input type="text" id="admFormName" required placeholder="مثال: د. أحمد محمود" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100">
+                    <label class="block text-slate-300 mb-1 font-semibold">الاسم أو اسم العيادة / المحل *</label>
+                    <input type="text" id="admFormName" required placeholder="مثال: عيادة د. محمد / سوبرماركت النور" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
@@ -634,23 +440,23 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-slate-300 mb-1 font-semibold">رقم الهاتف *</label>
-                        <input type="text" id="admFormPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-mono">
+                        <label class="block text-slate-300 mb-1 font-semibold">الهاتف *</label>
+                        <input type="text" id="admFormPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 font-mono">
                     </div>
                     <div>
-                        <label class="block text-slate-300 mb-1 font-semibold">رقم واتساب</label>
-                        <input type="text" id="admFormWhatsapp" placeholder="201012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-mono">
+                        <label class="block text-slate-300 mb-1 font-semibold">واتساب</label>
+                        <input type="text" id="admFormWhatsapp" placeholder="201012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">العنوان التفصيلي *</label>
-                    <input type="text" id="admFormAddress" required placeholder="شارع المركز الرئيسي - دروة" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100">
+                    <label class="block text-slate-300 mb-1 font-semibold">العنوان *</label>
+                    <input type="text" id="admFormAddress" required placeholder="شارع المركز - دروة" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">الرمز السري PIN (إن وجد)</label>
+                <div id="admPinWrapper" class="hidden">
+                    <label class="block text-slate-300 mb-1 font-semibold text-blue-400">رمز سري PIN (4 أرقام) للأطباء والمواصلات فقط</label>
                     <input type="text" id="admFormPin" maxlength="4" placeholder="5678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-slate-100 font-mono">
                 </div>
-                <button type="submit" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl transition shadow-lg">حفظ ونشر مباشر</button>
+                <button type="submit" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl transition">حفظ ونشر فوري في الدليل</button>
             </form>
         </div>
     </div>
@@ -659,19 +465,12 @@
     <div id="bookingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sm text-primary flex items-center"><i class="fa-solid fa-ticket ml-1.5"></i> حجز مقعد (الحد الأقصى 14)</h3>
+                <h3 class="font-bold text-sm text-primary">حجز مقعد</h3>
                 <button onclick="closeBookingModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div id="bookingModalInfo" class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2"></div>
             <form onsubmit="confirmBooking(event)" class="space-y-3">
                 <input type="hidden" id="bookingDriverId">
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">اتجاه السفر *</label>
-                    <select id="bookingDirection" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-bold">
-                        <option value="دروة إلى الوجهة">من دروة إلى الوجهة</option>
-                        <option value="الوجهة إلى دروة">من الوجهة إلى دروة (العودة)</option>
-                    </select>
-                </div>
                 <div>
                     <label class="block text-slate-300 mb-1 font-semibold">تاريخ السفر *</label>
                     <input type="date" id="bookingDate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
@@ -681,14 +480,14 @@
                     <input type="text" id="passengerName" required placeholder="محمد أحمد" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">رقم هاتف الراكب *</label>
+                    <label class="block text-slate-300 mb-1 font-semibold">هاتف الراكب *</label>
                     <input type="text" id="passengerPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                 </div>
                 <div>
                     <label class="block text-slate-300 mb-1 font-semibold">عدد المقاعد *</label>
                     <input type="number" id="passengerSeats" min="1" max="14" value="1" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                 </div>
-                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl transition shadow-lg">تأكيد حجز المقاعد</button>
+                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl transition">تأكيد حجز المقاعد</button>
             </form>
         </div>
     </div>
@@ -697,14 +496,14 @@
     <div id="doctorBookingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sm text-primary flex items-center"><i class="fa-solid fa-calendar-check ml-1.5"></i> حجز موعد عيادة</h3>
+                <h3 class="font-bold text-sm text-primary">حجز موعد عيادة</h3>
                 <button onclick="closeDoctorBookingModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div id="doctorBookingModalInfo" class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2"></div>
             <form onsubmit="confirmDoctorBooking(event)" class="space-y-3">
                 <input type="hidden" id="bookingDoctorId">
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">تاريخ الحجز (تقويم) *</label>
+                    <label class="block text-slate-300 mb-1 font-semibold">تاريخ الحجز *</label>
                     <input type="date" id="docBookingDate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                 </div>
                 <div>
@@ -712,10 +511,10 @@
                     <input type="text" id="docPatientName" required placeholder="محمد أحمد" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">رقم هاتف المريض *</label>
+                    <label class="block text-slate-300 mb-1 font-semibold">هاتف المريض *</label>
                     <input type="text" id="docPatientPhone" required placeholder="01012345678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                 </div>
-                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl transition shadow-lg">تأكيد حجز الموعد</button>
+                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl transition">تأكيد الموعد</button>
             </form>
         </div>
     </div>
@@ -789,15 +588,15 @@
             <div class="w-12 h-12 bg-primary/20 text-primary rounded-2xl mx-auto flex items-center justify-center text-xl font-bold">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
-            <h3 id="otpModalTitle" class="font-bold text-lg">تسجيل دخول المسؤول أو المشرف</h3>
+            <h3 class="font-bold text-lg">تسجيل دخول المسؤول أو المشرف</h3>
             <div id="otpStep1" class="space-y-3">
-                <p id="otpStep1Desc" class="text-xs text-slate-400">أدخل بريدك الإلكتروني المعتمد لتلقي كود التحقق عبر بريدك:</p>
+                <p class="text-xs text-slate-400">أدخل بريدك الإلكتروني المعتمد لتلقي كود التحقق:</p>
                 <input type="email" id="loginEmailInput" placeholder="example@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-100 focus:outline-none focus:border-primary font-mono">
                 <button onclick="requestAdminOtp()" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg">إرسال كود التحقق (OTP)</button>
             </div>
             <div id="otpStep2" class="space-y-3 hidden">
                 <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
-                    <p class="text-xs text-slate-400">تم إرسال كود التحقق (4 أرقام) إلى صندوق بريدك الإلكتروني.</p>
+                    <p class="text-xs text-slate-400">تم إرسال كود التحقق (4 أرقام) إلى بريدك.</p>
                 </div>
                 <input type="text" id="otpCodeInput" maxlength="4" placeholder="1234" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-center text-xl font-bold text-primary tracking-widest focus:outline-none focus:border-primary">
                 <button onclick="verifyAdminOtp()" class="w-full py-3 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg">تأكيد الدخول</button>
@@ -810,13 +609,13 @@
     <div id="addCategoryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 id="addCatModalTitle" class="font-bold text-sm">إضافة بند رئيسي أو فرعي جديد</h3>
+                <h3 class="font-bold text-sm">إضافة بند رئيسي أو فرعي جديد</h3>
                 <button onclick="closeAddCategoryModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <form onsubmit="saveNewCategory(event)" class="space-y-4 text-xs">
+            <form onsubmit="saveNewCategoryModal(event)" class="space-y-4 text-xs">
                 <div>
                     <label class="block text-slate-300 mb-1 font-semibold">نوع البند</label>
-                    <select id="catLevelSelect" onchange="toggleCatParentSelect()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
+                    <select id="catLevelType" onchange="toggleCatParentWrapper()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                         <option value="main">بند رئيسي جديد</option>
                         <option value="sub">بند فرعي تحت قسم رئيسي</option>
                     </select>
@@ -834,52 +633,55 @@
         </div>
     </div>
 
-    <!-- Developer Modal with Facebook Profile Link -->
+    <!-- Developer Modal -->
     <div id="developerModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs leading-relaxed text-slate-300">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold base flex items-center"><i class="fa-solid fa-user-gear text-primary ml-2"></i> صانع التطبيق</h3>
+                <h3 class="font-bold text-sm text-primary flex items-center"><i class="fa-solid fa-user-gear ml-2"></i> صانع التطبيق</h3>
                 <button onclick="closeDeveloperModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-xs leading-relaxed text-slate-300">
-                <p class="font-bold text-white text-sm">من فكرة ابن دروة إلى تطبيق في يد كل بيت</p>
-                <p>تم تطوير هذا التطبيق بمبادرة شخصية من أحد أبناء قرية دروة، بهدف جمع خدمات القرية في مكان واحد وتسهيل حياة أهالينا اليومية.</p>
-                <div class="pt-2 border-t border-slate-800 font-bold text-primary space-y-2">
-                    <p>مع تحياتي : م/ محمد محمود اسماعيل - رئيس قسم مساحة بشركة المقاولون العرب</p>
-                    <p class="font-mono mt-1 text-slate-200">واتساب / 01144336625</p>
-                    <div class="pt-2">
-                        <a href="https://www.facebook.com/share/1Fgn4vGEKP/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">
-                            <i class="fa-brands fa-facebook text-base ml-2"></i> التواصل عبر صفحة الفيسبوك الشخصية
-                        </a>
-                    </div>
-                </div>
+            <p class="font-bold text-white text-sm">من فكرة ابن دروة إلى تطبيق في يد كل بيت</p>
+            <p>تم تطوير هذا التطبيق بمبادرة شخصية من أحد أبناء قرية دروة، بهدف جمع خدمات القرية في مكان واحد وتسهيل حياة أهالينا اليومية.</p>
+            <div class="pt-2 border-t border-slate-800 font-bold text-primary space-y-1">
+                <p>مع تحياتي : م/ محمد محمود اسماعيل - رئيس قسم مساحة بشركة المقاولون العرب</p>
+                <p class="font-mono text-slate-200">واتساب / 01144336625</p>
             </div>
-            <button onclick="closeDeveloperModal()" class="w-full py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs transition">إغلاق</button>
+            <div class="pt-2">
+                <a href="https://www.facebook.com/share/1Fgn4vGEKP/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">
+                    <i class="fa-brands fa-facebook text-base ml-2"></i> التواصل عبر صفحة الفيسبوك الشخصية
+                </a>
+            </div>
+            <button onclick="closeDeveloperModal()" class="w-full py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs transition mt-2">إغلاق</button>
         </div>
     </div>
 
-    <!-- About App Modal -->
+    <!-- About Modal -->
     <div id="aboutModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-circle-info text-primary ml-2"></i> عن التطبيق</h3>
+                <h3 class="font-bold text-sm text-primary"><i class="fa-solid fa-circle-info ml-1.5"></i> عن التطبيق</h3>
                 <button onclick="closeAboutModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                تطبيق (الدليل الذكى لقرية دروة مركز ملوى) هو الدليل الرقمي الشامل لقرية دروة بمركز ملوي، والمصمم خصيصاً لتحويلها إلى قرية ذكية وربط أهالي القرية بجميع الخدمات والأطباء والمحلات ومواقف المواصلات.
-            </div>
-            <button onclick="closeAboutModal()" class="w-full py-2.5 bg-slate-800 text-slate-300 rounded-xl text-xs">إغلاق</button>
+            <p class="text-slate-300 leading-relaxed">تطبيق (الدليل الذكى لقرية دروة مركز ملوى) هو الدليل الرقمي الشامل لقرية دروة بمركز ملوي، والمصمم خصيصاً لتحويلها إلى قرية ذكية وربط أهالي القرية بجميع الخدمات والأطباء والصيادلة والمحلات ومواقف المواصلات وحجوزات العيادات.</p>
+            <button onclick="closeAboutModal()" class="w-full py-2.5 bg-slate-800 text-slate-300 rounded-xl">إغلاق</button>
         </div>
     </div>
 
-    <!-- Privacy Policy Modal -->
+    <!-- Privacy Modal -->
     <div id="privacyModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full max-h-[85vh] overflow-y-auto p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-shield-halved text-primary ml-2"></i> سياسة الخصوصية</h3>
+                <h3 class="font-bold text-sm text-primary"><i class="fa-solid fa-shield-halved ml-1.5"></i> سياسة الخصوصية</h3>
                 <button onclick="closePrivacyModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="privacyNodesList" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3 text-slate-300 leading-relaxed"></div>
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2.5 text-slate-300 leading-relaxed">
+                <p>• نحترم خصوصيتك. توضح هذه الصفحة البيانات التي نجمعها وكيفية استخدامها.</p>
+                <p>• الغرض الأساسي من الدليل هو وصول الأهالي إليك بكل سهولة.</p>
+                <p>• بريد المسؤول والمشرفين محفوظ لغرض واحد فقط هو إرسال كود التحقق (OTP) للإدارة.</p>
+                <p>• حجوزات العيادات والمواصلات مرتبطة بيومها وتزول تلقائياً بعدها لضمان السرية والخصوصية.</p>
+                <p>• طلبات الانضمام عبر بند "انضم إلينا" تخضع لمراجعة وموافقة الإدارة قبل نشرها رسمياً.</p>
+                <p>• لا نبيع بياناتك ولا نشاركها مع أي طرف ثالث لأغراض إعلانية.</p>
+            </div>
             <button onclick="closePrivacyModal()" class="w-full py-2.5 bg-slate-800 text-slate-300 rounded-xl">إغلاق</button>
         </div>
     </div>
@@ -888,19 +690,17 @@
     <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-gear text-primary ml-2"></i> الإعدادات</h3>
+                <h3 class="font-bold text-sm text-primary"><i class="fa-solid fa-gear ml-1.5"></i> الإعدادات</h3>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-4 text-slate-300">
                 <div>
                     <label class="block font-semibold mb-2">المظهر</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="applyTheme('system')" id="themeSysBtn" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center hover:border-primary transition">حسب النظام</button>
-                        <button onclick="applyTheme('dark')" id="themeDarkBtn" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl text-center font-bold transition">الوضع الليلي</button>
-                        <button onclick="applyTheme('light')" id="themeLightBtn" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center hover:border-primary transition">الوضع النهاري</button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applyTheme('dark')" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition">الوضع الليلي</button>
+                        <button onclick="applyTheme('light')" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl transition">الوضع النهاري</button>
                     </div>
                 </div>
-
                 <div>
                     <label class="block font-semibold mb-2">لون التطبيق الأساسي</label>
                     <div class="flex space-x-2 space-x-reverse">
@@ -911,12 +711,11 @@
                         <button onclick="applyColor('#3B82F6')" class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow"></button>
                     </div>
                 </div>
-
                 <div>
-                    <label class="block font-semibold mb-2">اللغة / Language</label>
+                    <label class="block font-semibold mb-2">اللغة</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="applyLanguage('ar')" id="langArBtn" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition">العربية</button>
-                        <button onclick="applyLanguage('en')" id="langEnBtn" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center transition">English</button>
+                        <button onclick="applyLanguage('ar')" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition">العربية</button>
+                        <button onclick="applyLanguage('en')" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl transition">English</button>
                     </div>
                 </div>
             </div>
@@ -944,7 +743,7 @@
                     <label class="block text-slate-300 mb-1 font-semibold">رسالتك *</label>
                     <textarea id="contactMsg" required rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></textarea>
                 </div>
-                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl hover:opacity-90">إرسال الرسالة للمسؤول</button>
+                <button type="submit" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl">إرسال الرسالة للمسؤول</button>
             </form>
         </div>
     </div>
@@ -953,14 +752,12 @@
     <div id="notificationsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sm"><i class="fa-solid fa-bell text-primary ml-1.5"></i> الإشعارات والتنبيهات الداخلية</h3>
+                <h3 class="font-bold text-sm text-primary"><i class="fa-solid fa-bell ml-1.5"></i> التنبيهات</h3>
                 <button onclick="closeNotificationsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="internalNotificationsList" class="space-y-3 max-h-60 overflow-y-auto">
-                <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1">
-                    <p class="font-bold text-primary">مرحباً بأهالي قرية دروة الكرام</p>
-                    <p class="text-slate-400 leading-relaxed">تم إطلاق تطبيق (الدليل الذكى لقرية دروة مركز ملوى) بنظام الإشعارات الداخلية المجاني ولوحة الحجوزات الموحدة.</p>
-                </div>
+            <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1">
+                <p class="font-bold text-primary">مرحباً بأهالي قرية دروة الكرام</p>
+                <p class="text-slate-400">الدليل يعمل بكفاءة تامة مع لوحة الحجوزات اليومية وإدارة PIN.</p>
             </div>
             <button onclick="closeNotificationsModal()" class="w-full py-2 bg-slate-800 text-slate-300 rounded-xl">حسناً</button>
         </div>
@@ -975,8 +772,8 @@
             <h4 id="customAlertTitle" class="font-bold text-sm">تنبيه</h4>
             <p id="customAlertMsg" class="text-xs text-slate-300 leading-relaxed"></p>
             <div id="customAlertActionArea" class="hidden pt-1">
-                <a id="customAlertWaLink" href="#" target="_blank" onclick="closeCustomAlert()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center justify-center shadow-lg transition">
-                    <i class="fa-brands fa-whatsapp text-sm ml-1.5"></i> إرسال تأكيد الحجز عبر واتساب
+                <a id="customAlertWaLink" href="#" target="_blank" onclick="closeCustomAlert()" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center shadow-lg transition">
+                    <i class="fa-brands fa-whatsapp text-sm ml-1.5"></i> إرسال عبر واتساب
                 </a>
             </div>
             <button onclick="closeCustomAlert()" class="w-full py-2 bg-primary text-slate-950 font-bold rounded-xl">حسناً</button>
@@ -985,18 +782,14 @@
 
     <!-- Application JavaScript Logic -->
     <script>
+        // الأطباء بند رئيسي مباشر بدون بنود فرعية، والمواصلات تضم خطوط القاهرة والمنيا والمنيا الجديدة
         let dbCategories = [
             {
-                id: 'health',
+                id: 'doctors',
                 name: 'الأطباء والعيادات',
                 nameEn: 'Doctors & Clinics',
                 icon: 'fa-solid fa-user-doctor',
-                subCategories: [
-                    { id: 'dr_omar', name: 'عيادة د. عمر عبدالقادر', nameEn: 'Dr. Omar Abdelkader Clinic' },
-                    { id: 'clinics', name: 'العيادات التخصصية الأخرى', nameEn: 'Other Medical Clinics' },
-                    { id: 'pharmacies', name: 'الصيدليات', nameEn: 'Pharmacies' },
-                    { id: 'labs', name: 'معامل التحاليل', nameEn: 'Labs & Radiology' }
-                ]
+                subCategories: []
             },
             {
                 id: 'medicines',
@@ -1048,12 +841,11 @@
                 nameEn: 'Transport & Parking',
                 icon: 'fa-solid fa-car-side',
                 subCategories: [
-                    { id: 'microbuses', name: 'ميكروباصات', nameEn: 'Microbuses' },
-                    { id: 'tamanya', name: 'عربيات التمناية', nameEn: 'Tamanya Cars' },
-                    { id: 'tuk_tuks', name: 'تكاتك', nameEn: 'Tuk-Tuks' },
                     { id: 'cairo_buses', name: 'ميكروباصات القاهرة', nameEn: 'Cairo Microbuses' },
                     { id: 'minya_buses', name: 'ميكروباصات المنيا', nameEn: 'Minya Microbuses' },
-                    { id: 'new_minya_buses', name: 'ميكروباصات المنيا الجديدة', nameEn: 'New Minya Microbuses' }
+                    { id: 'new_minya_buses', name: 'ميكروباصات المنيا الجديدة', nameEn: 'New Minya Microbuses' },
+                    { id: 'tamanya', name: 'عربيات التمناية', nameEn: 'Tamanya Cars' },
+                    { id: 'tuk_tuks', name: 'تكاتك', nameEn: 'Tuk-Tuks' }
                 ]
             },
             {
@@ -1066,15 +858,14 @@
         ];
 
         let dbItems = [
-            { id: 1, type: 'directory', mainCatId: 'health', subCatId: 'dr_omar', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [] },
+            { id: 1, type: 'directory', mainCatId: 'doctors', subCatId: '', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [] },
             { id: 2, type: 'directory', mainCatId: 'medicines', subCatId: 'all_pharma', name: 'صيدلية د. مصطفى دروة', phone: '01012345678', whatsapp: '201012345678', address: 'شارع المركز الرئيسي - دروة', status: 'approved' },
-            { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [] }
+            { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [] },
+            { id: 4, type: 'directory', mainCatId: 'transport', subCatId: 'minya_buses', name: 'كابتن أحمد السائق (خط المنيا)', phone: '01122334455', whatsapp: '201122334455', address: 'موقف دروة - خط المنيا', status: 'approved', pinCode: '2233', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى المنيا', passengersList: [] }
         ];
 
         let dbOffers = [];
         let dbJobs = [];
-        let internalNotifications = [{ title: 'مرحباً بأهالي قرية دروة الكرام', body: 'يعمل التطبيق بنظام الحجوزات الموحدة للأطباء والسائقين.', time: 'الآن' }];
-
         let supervisors = [
             { email: 'elderwi.arabcont@gmail.com', name: 'المدير الأساسي (Super Admin)', role: 'super_admin' },
             { email: 'supervisor1@derwasmart.com', name: 'مشرف الدليل', role: 'supervisor' }
@@ -1155,37 +946,31 @@
             cleanupExpiredBookings();
             const grid = document.getElementById('categoriesGrid');
             const approvedItems = dbItems.filter(i => i.type === 'directory' && i.status === 'approved');
-            const approvedOffers = dbOffers.filter(o => o.status === 'approved');
             
             document.getElementById('statTotalServices').innerText = approvedItems.length;
-            document.getElementById('statCategories').innerText = dbCategories.length;
-            document.getElementById('statActiveOffers').innerText = approvedOffers.length;
 
             grid.innerHTML = dbCategories.map(cat => {
                 const count = approvedItems.filter(i => i.mainCatId === cat.id).length;
-                const catName = currentLang === 'en' ? cat.nameEn : cat.name;
-                const countText = currentLang === 'en' ? `${count} services` : `${count} خدمة`;
                 return `
                     <div onclick="openCategoryDetail('${cat.id}')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-3.5 flex items-center space-x-3 space-x-reverse cursor-pointer transition shadow group">
                         <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg group-hover:scale-105 transition flex-shrink-0 shadow-inner">
                             <i class="${cat.icon || 'fa-solid fa-folder'}"></i>
                         </div>
                         <div class="overflow-hidden flex-1">
-                            <h4 class="font-bold text-xs truncate group-hover:text-primary transition">${catName}</h4>
-                            <p class="text-[10px] text-slate-400 font-medium">${countText}</p>
+                            <h4 class="font-bold text-xs truncate group-hover:text-primary transition">${cat.name}</h4>
+                            <p class="text-[10px] text-slate-400 font-medium">${count} خدمة</p>
                         </div>
                     </div>
                 `;
             }).join('');
         }
-
         function filterHomeSearch() { renderHomeCategories(); }
 
         function renderOffers() {
             const container = document.getElementById('offersContainer');
             const approvedOffers = dbOffers.filter(o => o.status === 'approved');
             if (approvedOffers.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-tags"></i></div><h4 class="font-bold text-base">لا توجد عروض حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف عرضك مع صورة المنتج من هاتفك ووصفه وسيظهر هنا بعد موافقة الإدارة.</p><button onclick="openAddOfferModal()" class="px-5 py-2.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-primary/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف عرضك الآن</button></div>`;
+                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-tags"></i></div><h4 class="font-bold text-base">لا توجد عروض حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف عرضك مع صورة المنتج من هاتفك ووصفه وسيظهر هنا بعد موافقة الإدارة.</p><button onclick="openAddOfferModal()" class="px-5 py-2.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف عرضك الآن</button></div>`;
                 return;
             }
             container.innerHTML = approvedOffers.map(offer => `
@@ -1204,7 +989,7 @@
             const container = document.getElementById('jobsContainer');
             const approvedJobs = dbJobs.filter(j => j.status === 'approved');
             if (approvedJobs.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-briefcase"></i></div><h4 class="font-bold text-base">لا توجد وظائف معروضة حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف إعلان وظيفة ليعرض على أهالي القرية بعد موافقة الإدارة.</p><button onclick="openAddJobModal()" class="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف إعلان وظيفة</button></div>`;
+                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-briefcase"></i></div><h4 class="font-bold text-base">لا توجد وظائف معروضة حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف إعلان وظيفة ليعرض على أهالي القرية بعد موافقة الإدارة.</p><button onclick="openAddJobModal()" class="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف إعلان وظيفة</button></div>`;
                 return;
             }
             container.innerHTML = approvedJobs.map(job => `
@@ -1222,57 +1007,69 @@
             cleanupExpiredBookings();
             const cat = dbCategories.find(c => c.id === catId);
             if (!cat) return;
-            document.getElementById('modalCategoryTitle').innerText = currentLang === 'en' ? cat.nameEn : cat.name;
+            document.getElementById('modalCategoryTitle').innerText = cat.name;
             const container = document.getElementById('categoryDetailContent');
 
             let html = '';
-            cat.subCategories.forEach(sub => {
-                const subItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.subCatId === sub.id && i.status === 'approved');
-                const subName = currentLang === 'en' ? sub.nameEn : sub.name;
-                
-                html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3"><h4 class="font-bold text-sm text-primary flex items-center justify-between border-b border-slate-800 pb-2"><span><i class="fa-solid fa-folder-open ml-2"></i> ${subName}</span>${currentLoggedInAdmin ? `<button onclick="openAdminAddItemToSub('${cat.id}', '${sub.id}')" class="px-2 py-1 bg-primary/20 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-plus ml-1"></i> إضافة جهة</button>` : ''}</h4>`;
-
-                if (subItems.length === 0) {
-                    html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد جهات مسجلة تحت هذا البند حالياً</p>`;
+            if (cat.id === 'doctors') {
+                const docItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === 'doctors' && i.status === 'approved');
+                html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3"><h4 class="font-bold text-sm text-primary border-b border-slate-800 pb-2"><i class="fa-solid fa-user-doctor ml-2"></i> عيادات وأطباء القرية</h4>`;
+                if (docItems.length === 0) {
+                    html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد عيادات مسجلة حالياً</p>`;
                 } else {
                     html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
-                    subItems.forEach(item => {
-                        const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
-                        const max = item.maxSeats || 14;
-                        const remaining = max - booked;
-                        const tripDir = item.currentTripDirection || 'النقلة الحالية متاحة';
-                        
+                    docItems.forEach(item => {
                         html += `
                             <div class="bg-cardBg border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow">
-                                <div class="flex justify-between items-start"><h5 class="font-bold text-sm">${item.name}</h5><span class="text-[10px] text-slate-300 font-medium bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800"><i class="fa-solid fa-location-dot text-primary ml-1"></i>${item.address}</span></div>
-                                ${['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(sub.id) ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز مقعد</button></div></div>` : ''}
-                                ${item.isDoctorClinic ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">حجوزات العيادة:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مريض مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
-                                <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${item.whatsapp ? `<a href="https://wa.me/${item.whatsapp}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
+                                <div class="flex justify-between items-start"><h5 class="font-bold text-sm">${item.name}</h5><span class="text-[10px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800"><i class="fa-solid fa-location-dot text-primary ml-1"></i>${item.address}</span></div>
+                                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">حجوزات العيادة:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مريض مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3.5 py-1.5 bg-primary text-slate-950 font-bold rounded-lg shadow">حجز موعد</button></div>
+                                <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${item.whatsapp ? `<a href="https://wa.me/${item.whatsapp}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
                             </div>
                         `;
                     });
                     html += `</div>`;
                 }
                 html += `</div>`;
-            });
-            container.innerHTML = html;
+            } else {
+                cat.subCategories.forEach(sub => {
+                    const subItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.subCatId === sub.id && i.status === 'approved');
+                    html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3"><h4 class="font-bold text-sm text-primary border-b border-slate-800 pb-2"><i class="fa-solid fa-folder-open ml-2"></i> ${sub.name}</h4>`;
+
+                    if (subItems.length === 0) {
+                        html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد جهات مسجلة تحت هذا البند</p>`;
+                    } else {
+                        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                        subItems.forEach(item => {
+                            const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
+                            const max = item.maxSeats || 14;
+                            const remaining = max - booked;
+                            const tripDir = item.currentTripDirection || 'النقلة الحالية متاحة';
+                            const isTransport = ['cairo_buses', 'minya_buses', 'new_minya_buses', 'tamanya', 'tuk_tuks'].includes(sub.id) || cat.id === 'transport';
+                            
+                            html += `
+                                <div class="bg-cardBg border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow">
+                                    <div class="flex justify-between items-start"><h5 class="font-bold text-sm">${item.name}</h5><span class="text-[10px] text-slate-300 bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800"><i class="fa-solid fa-location-dot text-primary ml-1"></i>${item.address}</span></div>
+                                    ${isTransport ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3.5 py-1.5 bg-primary text-slate-950 font-bold rounded-lg shadow">حجز مقعد</button></div></div>` : ''}
+                                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${item.whatsapp ? `<a href="https://wa.me/${item.whatsapp}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                });
+            }
+            document.getElementById('categoryDetailContent').innerHTML = html;
             document.getElementById('categoryDetailModal').classList.remove('hidden');
         }
-
         function closeCategoryModal() { document.getElementById('categoryDetailModal').classList.add('hidden'); }
 
         function openBookingModal(itemId) {
             const item = dbItems.find(i => i.id === itemId);
             if (!item) return;
             document.getElementById('bookingDriverId').value = item.id;
-            const booked = item.bookedSeats || 0;
-            const max = item.maxSeats || 14;
-            const currentDir = item.currentTripDirection || 'من دروة إلى القاهرة';
-            document.getElementById('bookingModalInfo').innerHTML = `<p class="font-bold text-white text-sm">${item.name}</p><p class="text-slate-400 text-xs">السير: ${item.address}</p><p class="text-primary font-bold text-xs">الاتجاه الحالي: ${currentDir}</p><p class="text-amber-400 font-bold text-xs">المحجوز: ${booked} / ${max}</p>`;
+            document.getElementById('bookingModalInfo').innerHTML = `<p class="font-bold text-white text-sm">${item.name}</p><p class="text-slate-400 text-xs">${item.address}</p>`;
             document.getElementById('bookingDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('passengerName').value = '';
-            document.getElementById('passengerPhone').value = '';
-            document.getElementById('passengerSeats').value = '1';
             document.getElementById('bookingModal').classList.remove('hidden');
         }
         function closeBookingModal() { document.getElementById('bookingModal').classList.add('hidden'); }
@@ -1284,30 +1081,24 @@
             const pName = document.getElementById('passengerName').value.trim();
             const pPhone = document.getElementById('passengerPhone').value.trim();
             const seatsReq = Number(document.getElementById('passengerSeats').value);
-            const bDir = document.getElementById('bookingDirection').value;
-
             const item = dbItems.find(i => i.id === driverId);
             if (!item) return;
 
             item.bookedSeats = (item.bookedSeats || 0) + seatsReq;
             if (!item.passengersList) item.passengersList = [];
-            item.passengersList.push({ name: pName, phone: pPhone, seats: seatsReq, date: bDate, direction: bDir });
+            item.passengersList.push({ name: pName, phone: pPhone, seats: seatsReq, date: bDate, direction: item.currentTripDirection || 'اتجاه السير' });
 
             closeBookingModal();
             closeCategoryModal();
-            const waNumber = item.whatsapp || ('2' + item.phone);
-            const waMsg = encodeURIComponent(`مرحباً ${item.name}، تم حجز (${seatsReq}) مقعد باتجاه (${bDir}) باسم: ${pName} - هاتف: ${pPhone} - تاريخ: ${bDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح. يمكنك إرسال التأكيد للسائق عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح وتحديث الكشف.`, true);
         }
 
         function openDoctorBookingModal(itemId) {
             const item = dbItems.find(i => i.id === itemId);
             if (!item) return;
             document.getElementById('bookingDoctorId').value = item.id;
-            document.getElementById('doctorBookingModalInfo').innerHTML = `<p class="font-bold text-white text-sm">${item.name}</p><p class="text-slate-400 text-xs">العنوان: ${item.address}</p><p class="text-primary font-bold text-xs">المرضى المسجلين: ${item.bookings ? item.bookings.length : 0}</p>`;
+            document.getElementById('doctorBookingModalInfo').innerHTML = `<p class="font-bold text-white text-sm">${item.name}</p><p class="text-slate-400 text-xs">${item.address}</p>`;
             document.getElementById('docBookingDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('docPatientName').value = '';
-            document.getElementById('docPatientPhone').value = '';
             document.getElementById('doctorBookingModal').classList.remove('hidden');
         }
         function closeDoctorBookingModal() { document.getElementById('doctorBookingModal').classList.add('hidden'); }
@@ -1325,64 +1116,47 @@
             item.bookings.push({ name: patName, phone: patPhone, date: chosenDate });
             closeDoctorBookingModal();
             closeCategoryModal();
-            const waNumber = item.whatsapp || ('2' + item.phone);
-            const waMsg = encodeURIComponent(`مرحباً ${item.name}، حجز موعد جديد باسم: ${patName} - هاتف: ${patPhone} - تاريخ: ${chosenDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) بكشف العيادة لتاريخ ${chosenDate}. أرسل للإدارة/العيادة عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) بكشف العيادة لتاريخ الحجز بنجاح.`, true);
         }
 
-        function openAdminAddItemToSub(mainCatId, subCatId) {
-            closeCategoryModal();
-            switchTab('join');
-            document.getElementById('joinMainCat').value = mainCatId;
-            populateJoinSubCats();
-            document.getElementById('joinSubCat').value = subCatId;
-        }
-
-        async function pickContactFromDevice() {
+        async function pickContactFromDevice(targetForm = 'join') {
             if ('contacts' in navigator && 'select' in navigator.contacts) {
                 try {
                     const contacts = await navigator.contacts.select(['name', 'tel'], { multiple: false });
                     if (contacts && contacts[0]) {
-                        if (contacts[0].name) document.getElementById('joinName').value = contacts[0].name[0];
-                        if (contacts[0].tel) {
-                            document.getElementById('joinPhone').value = contacts[0].tel[0];
-                            document.getElementById('joinWhatsapp').value = contacts[0].tel[0].replace(/\D/g, '');
+                        const nameVal = contacts[0].name && contacts[0].name[0] ? contacts[0].name[0] : '';
+                        const phoneVal = contacts[0].tel && contacts[0].tel[0] ? contacts[0].tel[0] : '';
+                        
+                        if (targetForm === 'admin') {
+                            document.getElementById('admFormName').value = nameVal;
+                            document.getElementById('admFormPhone').value = phoneVal;
+                            document.getElementById('admFormWhatsapp').value = phoneVal.replace(/\D/g, '');
+                        } else {
+                            document.getElementById('joinName').value = nameVal;
+                            document.getElementById('joinPhone').value = phoneVal;
+                            document.getElementById('joinWhatsapp').value = phoneVal.replace(/\D/g, '');
                         }
+                        showAlert('تم الاستيراد', 'تم جلب الاسم ورقم الهاتف من جهات الاتصال بنجاح.');
+                        return;
                     }
-                } catch (ex) {
-                    document.getElementById('joinName').value = 'د. عيادة أو محل تجاري';
-                    document.getElementById('joinPhone').value = '01011223344';
-                    document.getElementById('joinWhatsapp').value = '201011223344';
+                } catch (err) {
+                    console.log('Contact picker error or user cancelled', err);
                 }
-            } else {
-                document.getElementById('joinName').value = 'د. عيادة أو محل تجاري';
-                document.getElementById('joinPhone').value = '01011223344';
-                document.getElementById('joinWhatsapp').value = '201011223344';
-                showAlert('تم التحميل التجريبي', 'تم تحميل نموذج جهة اتصال للاختبار، يمكنك التعديل بحرية.');
             }
-        }
-
-        function handleOfferImageUpload(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) { document.getElementById('offerImageBase64').value = evt.target.result; };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function populateJoinSubCats() {
-            const mainId = document.getElementById('joinMainCat').value;
-            const subSelect = document.getElementById('joinSubCat');
-            const cat = dbCategories.find(c => c.id === mainId);
-            if (cat) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        }
-
-        function initJoinForm() {
-            const mainSelect = document.getElementById('joinMainCat');
-            if (mainSelect) {
-                mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-                populateJoinSubCats();
+            
+            const sampleName = prompt("أدخل الاسم الذي ترغب في استيراده من جهات الاتصال:", "عيادة أو محل أو كابتن مواصلات");
+            const samplePhone = prompt("أدخل رقم الهاتف:", "01012345678");
+            if (sampleName && samplePhone) {
+                if (targetForm === 'admin') {
+                    document.getElementById('admFormName').value = sampleName;
+                    document.getElementById('admFormPhone').value = samplePhone;
+                    document.getElementById('admFormWhatsapp').value = samplePhone.replace(/\D/g, '');
+                } else {
+                    document.getElementById('joinName').value = sampleName;
+                    document.getElementById('joinPhone').value = samplePhone;
+                    document.getElementById('joinWhatsapp').value = samplePhone.replace(/\D/g, '');
+                }
+                showAlert('تم التحميل', 'تم إدراج بيانات جهة الاتصال في النموذج بنجاح.');
             }
         }
 
@@ -1395,42 +1169,49 @@
             const whatsapp = document.getElementById('joinWhatsapp').value.trim();
             const address = document.getElementById('joinAddress').value.trim();
 
-            const newId = dbItems.length > 0 ? Math.max(...dbItems.map(i => i.id)) + 1 : 1;
-            const itemStatus = currentLoggedInAdmin ? 'approved' : 'pending';
-            const isDoc = mainCatId === 'health' && subCatId === 'dr_omar';
+            const isDoc = mainCatId === 'doctors';
+            const isTransport = mainCatId === 'transport';
 
-            dbItems.push({ id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: itemStatus, isDoctorClinic: isDoc, bookings: [] });
-            showAlert('تم إرسال الطلب', currentLoggedInAdmin ? 'تمت إضافة الجهة ونشرها مباشرة.' : 'تم إرسال طلب انضمامك بنجاح للإدارة للمراجعة.');
+            // قاعدة أساسية: طلبات المواطنين عبر "انضم إلينا" تكون بحالة 'pending' ولا تظهر إلا بعد موافقة المسؤول أو المشرفين
+            dbItems.push({ 
+                id: Date.now(), 
+                type: 'directory', 
+                name, 
+                mainCatId, 
+                subCatId: isDoc ? '' : subCatId, 
+                phone, 
+                whatsapp, 
+                address, 
+                status: 'pending', 
+                isDoctorClinic: isDoc, 
+                bookings: [], 
+                bookedSeats: 0, 
+                maxSeats: 14, 
+                passengersList: [], 
+                currentTripDirection: isTransport ? 'من دروة إلى الوجهة' : '' 
+            });
+            showAlert('تم إرسال الطلب', 'تم إرسال طلب انضمامك بنجاح إلى لوحة تحكم الإدارة والمشرفين، وسيتم نشره فور الموافقة عليه.');
             switchTab('home');
         }
 
-        function openAddOfferModal() { document.getElementById('addOfferModal').classList.remove('hidden'); }
-        function closeAddOfferModal() { document.getElementById('addOfferModal').classList.add('hidden'); }
-        function submitOffer(e) {
-            e.preventDefault();
-            const title = document.getElementById('offerTitle').value.trim();
-            const store = document.getElementById('offerStore').value.trim();
-            const image = document.getElementById('offerImageBase64').value.trim();
-            const description = document.getElementById('offerDesc').value.trim();
-            const phone = document.getElementById('offerPhone').value.trim();
-            dbOffers.push({ id: Date.now(), type: 'offer', title, store, image, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
-            closeAddOfferModal();
-            renderOffers();
-            showAlert('تم الإرسال', 'تم إرسال العرض بنجاح.');
+        function initJoinForm() {
+            const mainSelect = document.getElementById('joinMainCat');
+            if (mainSelect) {
+                mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                populateJoinSubCats();
+            }
         }
-
-        function openAddJobModal() { document.getElementById('addJobModal').classList.remove('hidden'); }
-        function closeAddJobModal() { document.getElementById('addJobModal').classList.add('hidden'); }
-        function submitJob(e) {
-            e.preventDefault();
-            const title = document.getElementById('jobTitle').value.trim();
-            const store = document.getElementById('jobStore').value.trim();
-            const description = document.getElementById('jobDesc').value.trim();
-            const phone = document.getElementById('jobPhone').value.trim();
-            dbJobs.push({ id: Date.now(), type: 'job', title, store, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
-            closeAddJobModal();
-            renderJobs();
-            showAlert('تم الإرسال', 'تم إرسال الوظيفة بنجاح.');
+        function populateJoinSubCats() {
+            const mainId = document.getElementById('joinMainCat').value;
+            const subSelect = document.getElementById('joinSubCat');
+            const cat = dbCategories.find(c => c.id === mainId);
+            if (cat) {
+                if (cat.id === 'doctors') {
+                    subSelect.innerHTML = `<option value="">بدون بند فرعي (عيادة طبيب مباشرة)</option>`;
+                } else {
+                    subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+            }
         }
 
         function openAdminLoginArea() {
@@ -1462,7 +1243,6 @@
             closeOtpModal();
             renderAdminDashboard();
             switchTab('admin');
-            switchAdminSubTab('services');
             showAlert('تم الدخول', `مرحباً بك ${currentLoggedInAdmin.name}`);
         }
 
@@ -1475,14 +1255,18 @@
 
         function renderAdminDashboard() {
             if (!currentLoggedInAdmin) return;
-            document.getElementById('loggedInAdminEmailText').innerText = currentLoggedInAdmin.email;
-            const structureBtn = document.getElementById('admTabBtn_structure');
+            document.getElementById('loggedInAdminEmailText').innerText = currentLoggedInAdmin.email + ' (' + (currentLoggedInAdmin.role === 'super_admin' ? 'مدير أساسي' : 'مشرف') + ')';
+            
+            const structureTabBtn = document.getElementById('admTabBtn_structure');
+            const supervisorSection = document.getElementById('superAdminSupervisorSection');
             if (currentLoggedInAdmin.role === 'super_admin') {
-                structureBtn.classList.remove('hidden');
+                structureTabBtn.classList.remove('hidden');
+                supervisorSection.classList.remove('hidden');
                 renderCategoriesTreeForAdmin();
                 renderSupervisorsList();
             } else {
-                structureBtn.classList.add('hidden');
+                structureTabBtn.classList.add('hidden');
+                supervisorSection.classList.add('hidden');
             }
             renderAdminApprovalTable();
             renderAdminPinsTable();
@@ -1490,7 +1274,8 @@
 
         function switchAdminSubTab(subName) {
             document.querySelectorAll('.admin-sub-tab').forEach(el => el.classList.add('hidden'));
-            document.getElementById('admSub_' + subName).classList.remove('hidden');
+            const target = document.getElementById('admSub_' + subName);
+            if (target) target.classList.remove('hidden');
             ['services', 'pins', 'approvals', 'structure'].forEach(btn => {
                 const bEl = document.getElementById('admTabBtn_' + btn);
                 if (bEl) bEl.className = btn === subName ? "py-2.5 rounded-xl bg-primary text-slate-950 transition flex items-center justify-center shadow" : "py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center";
@@ -1500,23 +1285,24 @@
 
         function renderAdminPinsTable() {
             const container = document.getElementById('adminPinsTableContainer');
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(i.subCatId)));
-            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أو خطوط مواصلات مسجلة</p>`; return; }
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم</th><th class="p-3">النوع</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic ? 'عيادة' : 'مواصلات'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
+            // قاعدة مطلوبة: أكواد PIN تقتصر على عيادات الأطباء وخطوط مواصلات (القاهرة، المنيا، المنيا الجديدة، تمانية، تكاتك)
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'transport'));
+            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أطباء أو خطوط مواصلات مسجلة</p>`; return; }
+            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">النوع</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic ? 'عيادة أطباء' : 'مواصلات'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3.5 py-1.5 bg-blue-600 text-white font-bold rounded-lg shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function updateProviderPin(itemId) {
             const newPin = document.getElementById('pinInput_' + itemId).value.trim();
-            if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز السري 4 أرقام.', false); return; }
+            if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز 4 أرقام.', false); return; }
             const item = dbItems.find(i => i.id === itemId);
             if (item) { item.pinCode = newPin; verifiedProviderId = null; showAlert('تم الحفظ', 'تم تحديث الرمز السري بنجاح.'); }
         }
 
         function initProviderDashboard() {
             const sel = document.getElementById('providerSelectDropdown');
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(i.subCatId)));
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'transport'));
             if (providers.length === 0) { sel.innerHTML = `<option value="">لا توجد جهات مسجلة</option>`; document.getElementById('providerDashboardContent').innerHTML = ''; return; }
-            sel.innerHTML = providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic ? 'عيادة' : 'مواصلات'})</option>`).join('');
+            sel.innerHTML = providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic ? 'عيادة أطباء' : 'مواصلات'})</option>`).join('');
             promptProviderPinCode();
         }
 
@@ -1525,8 +1311,8 @@
             const item = dbItems.find(i => i.id === selId);
             if (!item) return;
             if (verifiedProviderId === selId) { renderProviderDashboard(); return; }
-            const correctPin = item.pinCode || (item.isDoctorClinic ? '5678' : '1234');
-            document.getElementById('providerDashboardContent').innerHTML = `<div class="bg-slate-950 p-6 rounded-3xl border border-slate-800 text-center space-y-4 max-w-sm mx-auto shadow-xl"><div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl mx-auto flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-lock"></i></div><h4 class="font-bold text-sm text-white">حماية لوحة تحكم السائق / الطبيب</h4><p class="text-xs text-slate-400">أدخل الرمز السري الخاص بـ (${item.name}):</p><input type="password" id="providerPinInput" maxlength="4" placeholder="••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl font-bold text-primary tracking-widest focus:outline-none font-mono"><button onclick="verifyProviderPin(${item.id}, '${correctPin}')" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl text-xs transition shadow-lg">تأكيد الكود السري</button></div>`;
+            const correctPin = item.pinCode || '1234';
+            document.getElementById('providerDashboardContent').innerHTML = `<div class="bg-slate-950 p-6 rounded-3xl border border-slate-800 text-center space-y-4 max-w-sm mx-auto shadow-xl"><div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl mx-auto flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-lock"></i></div><h4 class="font-bold text-sm text-white">حماية لوحة تحكم الطبيب أو السائق</h4><p class="text-xs text-slate-400">أدخل الرمز السري (PIN Code) لـ (${item.name}):</p><input type="password" id="providerPinInput" maxlength="4" placeholder="••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl font-bold text-primary tracking-widest focus:outline-none font-mono"><button onclick="verifyProviderPin(${item.id}, '${correctPin}')" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl text-xs shadow-lg">تأكيد الكود السري</button></div>`;
         }
 
         function verifyProviderPin(itemId, correctPin) {
@@ -1546,20 +1332,63 @@
 
             if (item.isDoctorClinic) {
                 const todayB = (item.bookings || []).filter(b => b.date === todayStr);
-                container.innerHTML = `<div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div><h4 class="font-bold text-sm text-primary">${item.name}</h4><p class="text-[11px] text-slate-400">حجوزات اليوم: <span class="text-white font-bold">${todayB.length} مريض</span></p></div><button onclick="clearClinicBookings(${item.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-xl font-bold text-[11px]">تصفير كشف اليوم</button></div><div class="space-y-2 pt-2">${todayB.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات اليوم</p>' : todayB.map((b, i) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center"><div><p class="font-bold text-slate-200"><span class="text-primary ml-1">#${i+1}</span> ${b.name}</p><p class="text-[10px] text-slate-400 font-mono">هاتف: ${b.phone}</p></div><a href="tel:${b.phone}" class="px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-bold text-[10px]">اتصال</a></div>`).join('')}</div>`;
+                container.innerHTML = `
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-sm text-primary">${item.name}</h4>
+                            <p class="text-[11px] text-slate-400">كشف الحاجزين لتاريخ اليوم (${todayStr}): <span class="text-white font-bold">${todayB.length} مريض</span></p>
+                        </div>
+                        <button onclick="clearClinicBookings(${item.id})" class="px-3.5 py-1.5 bg-red-500/20 text-red-400 rounded-xl font-bold text-[11px]">تصفير كشف اليوم</button>
+                    </div>
+                    <div class="space-y-2 pt-2">
+                        ${todayB.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات مسجلة لتاريخ اليوم</p>' : todayB.map((b, i) => `
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-slate-200"><span class="text-primary ml-1">#${i+1}</span> ${b.name}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono">هاتف: ${b.phone} | التاريخ: ${b.date}</p>
+                                </div>
+                                <a href="tel:${b.phone}" class="px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-bold text-[10px]">اتصال</a>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
             } else {
                 const booked = item.bookedSeats || 0;
                 const max = item.maxSeats || 14;
                 const todayP = (item.passengersList || []).filter(p => p.date === todayStr);
-                const currentDir = item.currentTripDirection || 'من دروة إلى القاهرة';
-                let dest = item.subCatId === 'minya_buses' ? 'المنيا' : (item.subCatId === 'new_minya_buses' ? 'المنيا الجديدة' : 'القاهرة');
+                const currentDir = item.currentTripDirection || 'من دروة إلى الوجهة';
+
+                let dest = 'القاهرة';
+                if (item.subCatId === 'minya_buses') dest = 'المنيا';
+                if (item.subCatId === 'new_minya_buses') dest = 'المنيا الجديدة';
 
                 container.innerHTML = `
                     <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                        <div><h4 class="font-bold text-sm text-amber-400">${item.name}</h4><p class="text-[11px] text-slate-400 mt-0.5">الاتجاه الحالي: <span class="text-primary font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${currentDir}</span></p><p class="text-[11px] text-slate-400 mt-1">حجوزات اليوم: <span class="text-amber-400 font-bold">${booked} مقعد</span> / ${max}</p></div>
-                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2"><label class="block text-slate-300 font-bold text-[11px]">اختر اتجاه النقلة الجديدة (تصفير وبدء دورة):</label><div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button onclick="resetDriverSeatsWithDir(${item.id}, 'من دروة إلى ${dest}')" class="py-2 px-3 bg-primary text-slate-950 font-bold rounded-lg text-xs">من دروة إلى ${dest}</button><button onclick="resetDriverSeatsWithDir(${item.id}, 'من ${dest} إلى دروة')" class="py-2 px-3 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs">من ${dest} إلى دروة (العودة)</button></div></div>
+                        <div>
+                            <h4 class="font-bold text-sm text-amber-400">${item.name}</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">اتجاه السير الحالي: <span class="text-primary font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${currentDir}</span></p>
+                            <p class="text-[11px] text-slate-400 mt-1">حجوزات اليوم: <span class="text-amber-400 font-bold">${booked} مقعد</span> / ${max}</p>
+                        </div>
+                        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <label class="block text-slate-300 font-bold text-[11px]">بدء نقلة جديدة (اختر الاتجاه ليعلم الركاب أين تتجه):</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <button onclick="resetDriverSeatsWithDir(${item.id}, 'من دروة إلى ${dest}')" class="py-2.5 px-3 bg-primary text-slate-950 font-bold rounded-lg text-xs">من دروة إلى ${dest}</button>
+                                <button onclick="resetDriverSeatsWithDir(${item.id}, 'من ${dest} إلى دروة')" class="py-2.5 px-3 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs">من ${dest} إلى دروة (العودة)</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="space-y-2 pt-2">${todayP.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات ركاب اليوم</p>' : todayP.map((p, i) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center"><div><p class="font-bold text-slate-200"><span class="text-amber-400 ml-1">#${i+1}</span> ${p.name} <span class="bg-primary/15 text-primary px-2 py-0.5 rounded-full text-[10px] mr-1">${p.seats} مقعد</span> <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${p.direction || currentDir}</span></p><p class="text-[10px] text-slate-400 font-mono">هاتف: ${p.phone}</p></div><a href="tel:${p.phone}" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg font-bold text-[10px]">اتصال</a></div>`).join('')}</div>`;
+                    <div class="space-y-2 pt-2">
+                        ${todayP.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات ركاب مسجلة لتاريخ اليوم</p>' : todayP.map((p, i) => `
+                            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <p class="font-bold text-slate-200"><span class="text-amber-400 ml-1">#${i+1}</span> ${p.name} <span class="bg-primary/15 text-primary px-2 py-0.5 rounded-full text-[10px] mr-1">${p.seats} مقعد</span> <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${p.direction || currentDir}</span></p>
+                                    <p class="text-[10px] text-slate-400 font-mono">هاتف: ${p.phone} | التاريخ: ${p.date}</p>
+                                </div>
+                                <a href="tel:${p.phone}" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg font-bold text-[10px]">اتصال</a>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
             }
         }
 
@@ -1569,7 +1398,7 @@
             const todayStr = new Date().toISOString().split('T')[0];
             item.bookings = (item.bookings || []).filter(b => b.date !== todayStr);
             renderProviderDashboard();
-            showAlert('تم التصفير', 'تم تصفير كشف حجوزات العيادة اليومية بنجاح.');
+            showAlert('تم التصفير', 'تم تصفير كشف حجوزات العيادة لتاريخ اليوم.');
         }
 
         function resetDriverSeatsWithDir(driverId, directionName) {
@@ -1579,7 +1408,7 @@
             item.passengersList = [];
             item.currentTripDirection = directionName;
             renderProviderDashboard();
-            showAlert('نقلة جديدة', `تم بدء نقلة جديدة باتجاه: (${directionName}) وتصفير العداد بنجاح.`);
+            showAlert('نقلة جديدة', `تم بدء نقلة باتجاه: (${directionName}) وتصفير العداد بنجاح.`);
         }
 
         function openAdminAddServiceModal() {
@@ -1588,11 +1417,27 @@
             document.getElementById('adminAddServiceModal').classList.remove('hidden');
         }
         function closeAdminAddServiceModal() { document.getElementById('adminAddServiceModal').classList.add('hidden'); }
+        
         function populateAdmSubCats() {
             const mainId = document.getElementById('admFormMainCat').value;
             const subSel = document.getElementById('admFormSubCat');
+            const pinWrapper = document.getElementById('admPinWrapper');
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat) subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            
+            // قصر ظهور حقل PIN على الأطباء والمواصلات فقط
+            if (cat && (cat.id === 'doctors' || cat.id === 'transport')) {
+                pinWrapper.classList.remove('hidden');
+            } else {
+                pinWrapper.classList.add('hidden');
+            }
+
+            if (cat) {
+                if (cat.id === 'doctors') {
+                    subSel.innerHTML = `<option value="">بدون بند فرعي (عيادة طبيب مباشرة)</option>`;
+                } else {
+                    subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+            }
         }
 
         function adminSaveServiceDirectly(e) {
@@ -1603,82 +1448,187 @@
             const phone = document.getElementById('admFormPhone').value.trim();
             const whatsapp = document.getElementById('admFormWhatsapp').value.trim();
             const address = document.getElementById('admFormAddress').value.trim();
-            const pinCode = document.getElementById('admFormPin').value.trim() || '1234';
+            
+            const isDoc = mainCatId === 'doctors';
+            const isTransport = mainCatId === 'transport';
+            const needsPin = isDoc || isTransport;
 
-            dbItems.push({ id: Date.now(), type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, pinCode, status: 'approved', isDoctorClinic: mainCatId === 'health' && subCatId === 'dr_omar', bookings: [], bookedSeats: 0, maxSeats: 14, passengersList: [] });
+            const pinCode = needsPin ? (document.getElementById('admFormPin').value.trim() || '1234') : undefined;
+
+            dbItems.push({ 
+                id: Date.now(), 
+                type: 'directory', 
+                name, 
+                mainCatId, 
+                subCatId: isDoc ? '' : subCatId, 
+                phone, 
+                whatsapp, 
+                address, 
+                pinCode, 
+                status: 'approved', 
+                isDoctorClinic: isDoc, 
+                bookings: [], 
+                bookedSeats: 0, 
+                maxSeats: 14, 
+                passengersList: [], 
+                currentTripDirection: isTransport ? 'من دروة إلى الوجهة' : '' 
+            });
             closeAdminAddServiceModal();
             renderHomeCategories();
-            showAlert('تمت الإضافة', 'تم نشر الجهة بنجاح.');
+            renderAdminPinsTable();
+            showAlert('تمت الإضافة', 'تم نشر الجهة وظهورها في الدليل فورياً.');
         }
 
-        function openAddCategoryModal() { document.getElementById('addCategoryModal').classList.remove('hidden'); }
-        function closeAddCategoryModal() { document.getElementById('addCategoryModal').classList.add('hidden'); }
-        function toggleCatParentSelect() {
-            const type = document.getElementById('catLevelSelect').value;
-            document.getElementById('catParentWrapper').classList.toggle('hidden', type === 'main');
+        function openAddCategoryModal() {
+            if (currentLoggedInAdmin.role !== 'super_admin') { showAlert('صلاحية مقيدة', 'هذه الصلاحية للمدير الأساسي فقط.', false); return; }
+            const parentSel = document.getElementById('catParentSelect');
+            parentSel.innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            document.getElementById('catNameInput').value = '';
+            document.getElementById('addCategoryModal').classList.remove('hidden');
         }
-        function saveNewCategory(e) {
+        function closeAddCategoryModal() { document.getElementById('addCategoryModal').classList.add('hidden'); }
+        function toggleCatParentWrapper() {
+            const val = document.getElementById('catLevelType').value;
+            document.getElementById('catParentWrapper').classList.toggle('hidden', val === 'main');
+        }
+        function saveNewCategoryModal(e) {
             e.preventDefault();
-            const type = document.getElementById('catLevelSelect').value;
+            const type = document.getElementById('catLevelType').value;
             const name = document.getElementById('catNameInput').value.trim();
+            if (!name) return;
+
             if (type === 'main') {
-                dbCategories.push({ id: 'cat_' + Date.now(), name, nameEn: name, icon: 'fa-solid fa-folder', subCategories: [] });
+                dbCategories.push({ id: 'cat_' + Date.now(), name, nameEn: name, icon: 'fa-solid fa-folder', subCategories: [{ id: 'sub_' + Date.now(), name: 'عام', nameEn: 'General' }] });
             } else {
                 const parentId = document.getElementById('catParentSelect').value;
                 const parentCat = dbCategories.find(c => c.id === parentId);
                 if (parentCat) parentCat.subCategories.push({ id: 'sub_' + Date.now(), name, nameEn: name });
             }
+
             closeAddCategoryModal();
             renderHomeCategories();
             initJoinForm();
-            showAlert('تم الحفظ', 'تمت إضافة البند بنجاح.');
+            if (currentLoggedInAdmin && currentLoggedInAdmin.role === 'super_admin') renderCategoriesTreeForAdmin();
+            showAlert('تم الحفظ', 'تمت إضافة البند الجديد بنجاح.');
+        }
+
+        function renderAdminApprovalTable() {
+            const tbody = document.getElementById('adminApprovalTableBody');
+            let allSubs = [];
+            dbItems.forEach(i => allSubs.push({ ...i, targetTable: 'directory' }));
+            dbOffers.forEach(o => allSubs.push({ ...o, targetTable: 'offer', name: o.title }));
+            dbJobs.forEach(j => allSubs.push({ ...j, targetTable: 'job', name: j.title }));
+
+            if (allSubs.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">لا توجد طلبات معلقة</td></tr>`; return; }
+            tbody.innerHTML = allSubs.map(i => `
+                <tr>
+                    <td class="p-3 font-bold">${i.name}</td>
+                    <td class="p-3 text-slate-400">${i.targetTable}</td>
+                    <td class="p-3 font-mono">${i.phone}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${i.status === 'approved' ? 'bg-primary/20 text-primary' : 'bg-amber-500/20 text-amber-400'}">${i.status === 'approved' ? 'معتمد' : 'قيد المراجعة'}</span></td>
+                    <td class="p-3 text-center space-x-1 space-x-reverse">
+                        ${i.status !== 'approved' ? `<button onclick="setSubmissionStatus('${i.targetTable}', ${i.id}, 'approved')" class="px-2.5 py-1 bg-emerald-500/20 text-primary rounded font-bold text-[10px]">موافقة</button>` : ''}
+                        <button onclick="setSubmissionStatus('${i.targetTable}', ${i.id}, 'rejected')" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 rounded font-bold text-[10px]">رفض</button>
+                        <button onclick="deleteSubmission('${i.targetTable}', ${i.id})" class="px-2.5 py-1 bg-red-500/20 text-red-400 rounded font-bold text-[10px]">حذف نهائي</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function setSubmissionStatus(table, id, st) {
+            if (table === 'directory') { const it = dbItems.find(x => x.id === id); if (it) it.status = st; }
+            if (table === 'offer') { const of = dbOffers.find(x => x.id === id); if (of) of.status = st; }
+            if (table === 'job') { const jb = dbJobs.find(x => x.id === id); if (jb) jb.status = st; }
+            renderAdminApprovalTable();
+            renderHomeCategories();
+            renderOffers();
+            renderJobs();
+            showAlert('تم', 'تم تحديث حالة العنصر بنجاح.');
+        }
+
+        function deleteSubmission(table, id) {
+            if (table === 'directory') dbItems = dbItems.filter(x => x.id !== id);
+            if (table === 'offer') dbOffers = dbOffers.filter(x => x.id !== id);
+            if (table === 'job') dbJobs = dbJobs.filter(x => x.id !== id);
+            renderAdminApprovalTable();
+            renderHomeCategories();
+            renderOffers();
+            renderJobs();
+            showAlert('تم الحذف', 'تم حذف العنصر نهائياً.');
+        }
+
+        function renderCategoriesTreeForAdmin() {
+            const container = document.getElementById('adminCategoriesTreeContainer');
+            container.innerHTML = dbCategories.map(cat => `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                    <div><b class="text-primary">${cat.name}</b> (${cat.subCategories.length} بند فرعي)</div>
+                    <button onclick="deleteMainCategory('${cat.id}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+        }
+
+        function deleteMainCategory(catId) {
+            if (currentLoggedInAdmin.role !== 'super_admin') { showAlert('مرفوض', 'للمدير الأساسي فقط', false); return; }
+            dbCategories = dbCategories.filter(c => c.id !== catId);
+            dbItems = dbItems.filter(i => i.mainCatId !== catId);
+            renderCategoriesTreeForAdmin();
+            renderHomeCategories();
+            showAlert('تم', 'تم حذف القسم الرئيسي بنجاح.');
         }
 
         function addNewSupervisor() {
+            if (currentLoggedInAdmin.role !== 'super_admin') { showAlert('مرفوض', 'للمدير الأساسي فقط', false); return; }
             const name = document.getElementById('newSuperName').value.trim();
             const email = document.getElementById('newSuperEmail').value.trim();
-            if (!name || !email) { showAlert('خطأ', 'أدخل الاسم والإيميل', false); return; }
+            if (!name || !email) return showAlert('خطأ', 'أدخل الاسم والإيميل', false);
             supervisors.push({ email, name, role: 'supervisor' });
             document.getElementById('newSuperName').value = '';
             document.getElementById('newSuperEmail').value = '';
             renderSupervisorsList();
             showAlert('تم التعيين', 'تم تعيين المشرف بنجاح.');
         }
+
         function renderSupervisorsList() {
             const container = document.getElementById('supervisorsListContainer');
-            container.innerHTML = supervisors.map((s, idx) => `<div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs"><div><b>${s.name}</b> (${s.email})</div>${s.role !== 'super_admin' ? `<button onclick="supervisors.splice(${idx},1);renderSupervisorsList()" class="text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}</div>`).join('');
+            container.innerHTML = supervisors.map((s, idx) => `
+                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                    <div><b>${s.name}</b> (${s.email}) <span class="text-purple-400">${s.role === 'super_admin' ? 'مدير أساسي' : 'مشرف'}</span></div>
+                    ${s.role !== 'super_admin' ? `<button onclick="supervisors.splice(${idx},1);renderSupervisorsList()" class="text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}
+                </div>
+            `).join('');
         }
 
         function applyTheme(mode) {
             if (mode === 'light') document.body.classList.add('light-mode');
             else document.body.classList.remove('light-mode');
             showAlert('المظهر', 'تم تطبيق المظهر بنجاح.');
+            closeSettingsModal();
         }
-        function applyColor(hex) { document.documentElement.style.setProperty('--primary-color', hex); showAlert('اللون', 'تم تغيير اللون الأساسي.'); }
+        function applyColor(hex) { document.documentElement.style.setProperty('--primary-color', hex); showAlert('اللون', 'تم تغيير اللون الأساسي.'); closeSettingsModal(); }
         function applyLanguage(lang) {
             currentLang = lang;
             document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
             showAlert('اللغة', lang === 'en' ? 'Switched to English.' : 'تم التحويل للعربية.');
             renderHomeCategories();
+            closeSettingsModal();
         }
 
+        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
         function openDeveloperModal() { document.getElementById('developerModal').classList.remove('hidden'); }
         function closeDeveloperModal() { document.getElementById('developerModal').classList.add('hidden'); }
         function openAboutModal() { document.getElementById('aboutModal').classList.remove('hidden'); }
         function closeAboutModal() { document.getElementById('aboutModal').classList.add('hidden'); }
         function openPrivacyModal() { document.getElementById('privacyModal').classList.remove('hidden'); }
         function closePrivacyModal() { document.getElementById('privacyModal').classList.add('hidden'); }
-        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
         function openContactModal() { document.getElementById('contactModal').classList.remove('hidden'); }
         function closeContactModal() { document.getElementById('contactModal').classList.add('hidden'); }
         function submitContactMessage(e) { e.preventDefault(); showAlert('تم الإرسال', 'تم إرسال رسالتك للإدارة.'); closeContactModal(); }
         function openNotificationsModal() { document.getElementById('notificationsModal').classList.remove('hidden'); }
         function closeNotificationsModal() { document.getElementById('notificationsModal').classList.add('hidden'); }
-        function shareApp() { copyToClipboard(window.location.href); }
-        function copyToClipboard(text) {
-            const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
-            try { document.execCommand('copy'); showAlert('مشاركة', 'تم نسخ رابط التطبيق.'); } catch (e) {}
+        function shareApp() {
+            const ta = document.createElement('textarea'); ta.value = window.location.href; document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); showAlert('مشاركة', 'تم نسخ رابط التطبيق.'); } catch(e){}
             document.body.removeChild(ta);
         }
 
@@ -1698,50 +1648,81 @@
         window.openDoctorBookingModal = openDoctorBookingModal;
         window.closeDoctorBookingModal = closeDoctorBookingModal;
         window.confirmDoctorBooking = confirmDoctorBooking;
-        window.openAdminAddItemToSub = openAdminAddItemToSub;
         window.openAdminAddServiceModal = openAdminAddServiceModal;
         window.closeAdminAddServiceModal = closeAdminAddServiceModal;
         window.populateAdmSubCats = populateAdmSubCats;
         window.adminSaveServiceDirectly = adminSaveServiceDirectly;
-        window.pickContactFromDevice = pickContactFromDevice;
-        window.handleOfferImageUpload = handleOfferImageUpload;
-        window.populateJoinSubCats = populateJoinSubCats;
         window.submitJoinDirectly = submitJoinDirectly;
-        window.openAddOfferModal = openAddOfferModal;
-        window.closeAddOfferModal = closeAddOfferModal;
-        window.submitOffer = submitOffer;
-        window.openAddJobModal = openAddJobModal;
-        window.closeAddJobModal = closeAddJobModal;
-        window.submitJob = submitJob;
+        window.pickContactFromDevice = pickContactFromDevice;
+        window.populateJoinSubCats = populateJoinSubCats;
         window.openAdminLoginArea = openAdminLoginArea;
         window.closeOtpModal = closeOtpModal;
         window.requestAdminOtp = requestAdminOtp;
         window.verifyAdminOtp = verifyAdminOtp;
         window.logoutAdmin = logoutAdmin;
+        window.closeCustomAlert = closeCustomAlert;
+        window.filterHomeSearch = filterHomeSearch;
+        window.setSubmissionStatus = setSubmissionStatus;
+        window.deleteSubmission = deleteSubmission;
+        window.deleteMainCategory = deleteMainCategory;
+        window.addNewSupervisor = addNewSupervisor;
         window.openAddCategoryModal = openAddCategoryModal;
         window.closeAddCategoryModal = closeAddCategoryModal;
-        window.toggleCatParentSelect = toggleCatParentSelect;
-        window.saveNewCategory = saveNewCategory;
-        window.addNewSupervisor = addNewSupervisor;
-        window.applyTheme = applyTheme;
-        window.applyColor = applyColor;
-        window.applyLanguage = applyLanguage;
+        window.toggleCatParentWrapper = toggleCatParentWrapper;
+        window.saveNewCategoryModal = saveNewCategoryModal;
+        window.openSettingsModal = openSettingsModal;
+        window.closeSettingsModal = closeSettingsModal;
         window.openDeveloperModal = openDeveloperModal;
         window.closeDeveloperModal = closeDeveloperModal;
         window.openAboutModal = openAboutModal;
         window.closeAboutModal = closeAboutModal;
         window.openPrivacyModal = openPrivacyModal;
         window.closePrivacyModal = closePrivacyModal;
-        window.openSettingsModal = openSettingsModal;
-        window.closeSettingsModal = closeSettingsModal;
         window.openContactModal = openContactModal;
         window.closeContactModal = closeContactModal;
         window.submitContactMessage = submitContactMessage;
         window.openNotificationsModal = openNotificationsModal;
         window.closeNotificationsModal = closeNotificationsModal;
-        window.closeCustomAlert = closeCustomAlert;
         window.shareApp = shareApp;
-        window.filterHomeSearch = filterHomeSearch;
+        window.applyTheme = applyTheme;
+        window.applyColor = applyColor;
+        window.applyLanguage = applyLanguage;
+
+        window.openAddOfferModal = function() { document.getElementById('addOfferModal').classList.remove('hidden'); };
+        window.closeAddOfferModal = function() { document.getElementById('addOfferModal').classList.add('hidden'); };
+        window.submitOffer = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('offerTitle').value.trim();
+            const store = document.getElementById('offerStore').value.trim();
+            const image = document.getElementById('offerImageBase64').value.trim();
+            const description = document.getElementById('offerDesc').value.trim();
+            const phone = document.getElementById('offerPhone').value.trim();
+            dbOffers.push({ id: Date.now(), type: 'offer', title, store, image, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
+            window.closeAddOfferModal();
+            renderOffers();
+            showAlert('تم الإرسال', 'تم إرسال العرض بنجاح وبانتظار الموافقة.');
+        };
+        window.handleOfferImageUpload = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) { document.getElementById('offerImageBase64').value = evt.target.result; };
+                reader.readAsDataURL(file);
+            }
+        };
+        window.openAddJobModal = function() { document.getElementById('addJobModal').classList.remove('hidden'); };
+        window.closeAddJobModal = function() { document.getElementById('addJobModal').classList.add('hidden'); };
+        window.submitJob = function(e) {
+            e.preventDefault();
+            const title = document.getElementById('jobTitle').value.trim();
+            const store = document.getElementById('jobStore').value.trim();
+            const description = document.getElementById('jobDesc').value.trim();
+            const phone = document.getElementById('jobPhone').value.trim();
+            dbJobs.push({ id: Date.now(), type: 'job', title, store, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
+            window.closeAddJobModal();
+            renderJobs();
+            showAlert('تم الإرسال', 'تم إرسال الوظيفة بنجاح وبانتظار الموافقة.');
+        };
 
         window.onload = function() {
             renderHomeCategories();
@@ -1751,3 +1732,5 @@
     </script>
 </body>
 </html>
+```
+@@eof
