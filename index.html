@@ -2171,7 +2171,7 @@
             else {
                 tbody.innerHTML = allPending.map(i => `
                     <tr>
-                        <td class="p-3 font-bold">${i.name} <span class="text-slate-400 text-[10px]">(${i.targetTable})</span></td>
+                        <td class="p-3 font-bold">${i.name} <span class="text-slate-400 text-[10px]">(${i.targetTable === 'offer' ? 'عرض محل' : i.targetTable === 'job' ? 'إعلان وظيفة' : 'جهة بالدليل'})</span></td>
                         <td class="p-3 font-mono">${i.phone || '—'}</td>
                         <td class="p-3 text-amber-400 font-bold">قيد المراجعة</td>
                         <td class="p-3 text-center space-x-1 space-x-reverse">
