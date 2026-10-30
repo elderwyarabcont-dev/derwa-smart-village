@@ -1633,8 +1633,8 @@
         function initProviderDashboard() {
             const container = document.getElementById('providerDashboardContent');
             const selDropdown = document.getElementById('providerSelectDropdown');
-            // تعديل شرط الفلترة ليشمل كل الأطباء والعيادات والمواصلات وخطوط السير بشكل دقيق
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)));
+            // فلترة دقيقة تحصر القائمة في الأطباء والعيادات وخطوط السير فقط مع استبعاد تام للصيدليات والمحلات
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId));
             
             if (providers.length === 0) { 
                 if (selDropdown) selDropdown.innerHTML = `<option value="">لا توجد عيادات أو مواصلات مسجلة</option>`; 
@@ -1642,7 +1642,6 @@
                 return; 
             }
 
-            // تعبئة القائمة المنسدلة للعيادات وخطوط السير فوراً
             if (selDropdown) {
                 selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic ? 'عيادة' : 'مواصلات'})</option>`).join('');
             }
@@ -1671,7 +1670,6 @@
             const item = dbItems.find(i => i.id == selId);
             if (!item) return;
 
-            // إذا لم يتم تسجيل الدخول بالكود لهذا العنصر بعد، نطلب الكود السري الخاص به
             if (!loggedInProviderSession || loggedInProviderSession.id !== item.id) {
                 const container = document.getElementById('providerDashboardContent');
                 container.innerHTML = `
@@ -1710,10 +1708,11 @@
             const enteredPin = document.getElementById('providerGlobalPinInput').value.trim();
             if (!enteredPin) { showAlert('خطأ', 'أدخل الكود السري أولاً.', false); return; }
 
-            const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === (i.isDoctorClinic ? '5678' : '1234'))));
+            // فحص دقيق ومستقل: استبعاد تام لأي صيدلية أو محل تجاري
+            const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === (i.isDoctorClinic ? '5678' : '1234'))));
 
             if (!matchedProvider) {
-                showAlert('خطأ', 'الكود السري غير صحيح.', false);
+                showAlert('خطأ', 'الكود السري غير صحيح أو غير مخصص لمزيد من الخدمات.', false);
                 return;
             }
 
@@ -1721,6 +1720,22 @@
             document.getElementById('providerSelectDropdown').value = matchedProvider.id;
             initProviderDashboard();
             showAlert('مرحباً بك', `تم تسجيل الدخول بنجاح لصفحة: ${matchedProvider.name}`);
+        }
+
+        function verifySpecificProviderPin(itemId) {
+            const enteredPin = document.getElementById('specificProviderPinInput').value.trim();
+            const item = dbItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            const correctPin = item.pinCode || (item.isDoctorClinic ? '5678' : '1234');
+            if (enteredPin !== correctPin) {
+                showAlert('خطأ', 'الكود السري غير صحيح.', false);
+                return;
+            }
+
+            loggedInProviderSession = item;
+            renderActiveProviderDashboard(item);
+            showAlert('مرحباً بك', `تم فتح صفحة وحجوزات ${item.name} بنجاح.`);
         }
 
         function renderActiveProviderDashboard(item) {
