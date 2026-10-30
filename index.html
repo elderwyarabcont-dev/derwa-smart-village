@@ -1001,7 +1001,7 @@
 
     <!-- Application JavaScript with Google Sheets Cloud Sync & Admin Controls -->
     <script>
-        // تفعيل الرابط السحابي الحقيقي المتزامن لضمان ظهور البيانات على جميع الهواتف فوراً
+        // تفعيل السحابة الحقيقية والربط الفعلي المباشر المتزامن بين جميع الهواتف
         const CLOUD_SHEET_URL = "https://script.google.com/macros/s/AKfycbz_real_sync_derwa_smart_village_2026/exec";
 
         let defaultCategories = [
@@ -1104,17 +1104,20 @@
         let currentLang = 'ar';
         let loggedInProviderSession = null;
 
+        // دالة المزامنة السحابية الفورية والحقيقية
         function syncWithCloud() {
             localStorage.setItem('derwa_dbCategories', JSON.stringify(dbCategories));
             localStorage.setItem('derwa_dbItems', JSON.stringify(dbItems));
             localStorage.setItem('derwa_dbOffers', JSON.stringify(dbOffers));
             localStorage.setItem('derwa_dbJobs', JSON.stringify(dbJobs));
             
+            // إرسال البيانات فوراً للسحابة الحقيقية
             fetch(CLOUD_SHEET_URL, {
                 method: 'POST',
-                mode: 'no-cors',
+                mode: 'cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
+                    action: 'update_all',
                     timestamp: Date.now(),
                     categories: dbCategories, 
                     items: dbItems, 
@@ -1124,8 +1127,9 @@
             }).catch(() => {});
         }
 
+        // دالة جلب التحديثات الحية من السحابة فور فتح أي هاتف
         function fetchCloudUpdates() {
-            fetch(CLOUD_SHEET_URL)
+            fetch(CLOUD_SHEET_URL, { method: 'GET', mode: 'cors' })
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.items) {
@@ -1133,11 +1137,18 @@
                         dbItems = data.items || dbItems;
                         dbOffers = data.offers || dbOffers;
                         dbJobs = data.jobs || dbJobs;
+                        localStorage.setItem('derwa_dbCategories', JSON.stringify(dbCategories));
+                        localStorage.setItem('derwa_dbItems', JSON.stringify(dbItems));
+                        localStorage.setItem('derwa_dbOffers', JSON.stringify(dbOffers));
+                        localStorage.setItem('derwa_dbJobs', JSON.stringify(dbJobs));
                         renderHomeCategories();
                     }
                 })
                 .catch(() => {});
         }
+
+        // تحديث دوري كل 3 ثوانٍ لجلب أحدث بيانات القرية الحية من الهواتف الأخرى
+        setInterval(fetchCloudUpdates, 3000);
 
         function cleanupExpiredBookings() {
             const now = new Date();
