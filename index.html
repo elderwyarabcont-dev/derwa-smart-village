@@ -1617,9 +1617,10 @@
 
         function renderAdminPinsTable() {
             const container = document.getElementById('adminPinsTableContainer');
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(i.subCatId)));
-            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أو خطوط مواصلات مسجلة</p>`; return; }
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم</th><th class="p-3">النوع</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic ? 'عيادة' : 'مواصلات'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
+            // عرض كل الأطباء والعيادات ومواصلات خطوط السير والمواصلات العامة المضافة مباشرة أو المعتمدة
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)));
+            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أو مواصلات مسجلة</p>`; return; }
+            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">القسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic ? 'عيادة وطبيب' : 'مواصلات وموقف'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function updateProviderPin(itemId) {
@@ -1632,8 +1633,8 @@
         function initProviderDashboard() {
             const container = document.getElementById('providerDashboardContent');
             const selDropdown = document.getElementById('providerSelectDropdown');
-            // فلترة دقيقة لتشمل الأطباء ومواصلات خطوط السير فقط واستبعاد الصيدليات والمحلات
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(i.subCatId)));
+            // تعديل شرط الفلترة ليشمل كل الأطباء والعيادات والمواصلات وخطوط السير بشكل دقيق
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)));
             
             if (providers.length === 0) { 
                 if (selDropdown) selDropdown.innerHTML = `<option value="">لا توجد عيادات أو مواصلات مسجلة</option>`; 
@@ -1641,41 +1642,85 @@
                 return; 
             }
 
+            // تعبئة القائمة المنسدلة للعيادات وخطوط السير فوراً
+            if (selDropdown) {
+                selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic ? 'عيادة' : 'مواصلات'})</option>`).join('');
+            }
+
             if (!loggedInProviderSession) {
                 container.innerHTML = `
-                    <div class="bg-slate-950 p-6 rounded-3xl border border-slate-800 text-center space-y-4 max-w-sm mx-auto shadow-xl">
+                    <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 text-center space-y-4 max-w-sm mx-auto shadow-xl">
                         <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl mx-auto flex items-center justify-center text-xl font-bold">
                             <i class="fa-solid fa-lock"></i>
                         </div>
-                        <h4 class="font-bold text-sm text-white">تسجيل دخول الطبيب أو السائق بالكود</h4>
-                        <p class="text-xs text-slate-400">أدخل الكود السري (PIN Code) المخصص لك من قبل المسؤول:</p>
+                        <h4 class="font-bold text-sm text-white">أدخل الكود السري (PIN Code) الخاص بك</h4>
+                        <p class="text-xs text-slate-400">لعرض حجوزاتك وإدارتها:</p>
                         <input type="password" id="providerGlobalPinInput" maxlength="4" placeholder="••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl font-bold text-primary tracking-widest focus:outline-none font-mono">
-                        <button onclick="verifyProviderGlobalPin()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">دخول لصفحتي وحجوزاتي الخاصة</button>
+                        <button onclick="verifyProviderGlobalPin()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">دخول لصفحتي وحجوزاتي</button>
                     </div>
                 `;
-                if (selDropdown) selDropdown.innerHTML = `<option value="">أدخل الكود السري أولاً</option>`;
                 return;
             }
 
-            // عرض البيانات الخاصة بالطبيب أو السائق الذي سجّل الدخول فقط منعاً لدخول أي شخص على داتا غيره
             renderActiveProviderDashboard(loggedInProviderSession);
+        }
+
+        function renderProviderDashboard() {
+            const selId = document.getElementById('providerSelectDropdown').value;
+            if (!selId) return;
+            const item = dbItems.find(i => i.id == selId);
+            if (!item) return;
+
+            // إذا لم يتم تسجيل الدخول بالكود لهذا العنصر بعد، نطلب الكود السري الخاص به
+            if (!loggedInProviderSession || loggedInProviderSession.id !== item.id) {
+                const container = document.getElementById('providerDashboardContent');
+                container.innerHTML = `
+                    <div class="bg-slate-950 p-5 rounded-3xl border border-slate-800 text-center space-y-4 max-w-sm mx-auto shadow-xl">
+                        <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl mx-auto flex items-center justify-center text-xl font-bold">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-white">الرمز السري مطلوب لدخول: ${item.name}</h4>
+                        <input type="password" id="specificProviderPinInput" maxlength="4" placeholder="••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-2xl font-bold text-primary tracking-widest focus:outline-none font-mono">
+                        <button onclick="verifySpecificProviderPin(${item.id})" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">تأكيد الرمز السري وعرض الحجوزات</button>
+                    </div>
+                `;
+                return;
+            }
+
+            renderActiveProviderDashboard(loggedInProviderSession);
+        }
+
+        function verifySpecificProviderPin(itemId) {
+            const enteredPin = document.getElementById('specificProviderPinInput').value.trim();
+            const item = dbItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            const correctPin = item.pinCode || (item.isDoctorClinic ? '5678' : '1234');
+            if (enteredPin !== correctPin) {
+                showAlert('خطأ', 'الكود السري غير صحيح.', false);
+                return;
+            }
+
+            loggedInProviderSession = item;
+            renderActiveProviderDashboard(item);
+            showAlert('مرحباً بك', `تم فتح صفحة وحجوزات ${item.name} بنجاح.`);
         }
 
         function verifyProviderGlobalPin() {
             const enteredPin = document.getElementById('providerGlobalPinInput').value.trim();
             if (!enteredPin) { showAlert('خطأ', 'أدخل الكود السري أولاً.', false); return; }
 
-            // البحث بدقة عن مزود الخدمة (طبيب أو سائق) الذي يملك هذا الرمز السري حصرياً وتجاهل الصيدليات
             const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === (i.isDoctorClinic ? '5678' : '1234'))));
 
             if (!matchedProvider) {
-                showAlert('خطأ', 'الكود السري غير صحيح أو غير مخصص لمزود خدمة مواصلات/عيادة.', false);
+                showAlert('خطأ', 'الكود السري غير صحيح.', false);
                 return;
             }
 
             loggedInProviderSession = matchedProvider;
-            showAlert('مرحباً بك', `تم تسجيل الدخول بنجاح لصفحة: ${matchedProvider.name}`);
+            document.getElementById('providerSelectDropdown').value = matchedProvider.id;
             initProviderDashboard();
+            showAlert('مرحباً بك', `تم تسجيل الدخول بنجاح لصفحة: ${matchedProvider.name}`);
         }
 
         function renderActiveProviderDashboard(item) {
@@ -1835,7 +1880,7 @@
                 address, 
                 pinCode, 
                 status: 'approved', 
-                isDoctorClinic: mainCatId === 'health' && subCatId === 'dr_omar', 
+                isDoctorClinic: mainCatId === 'health' && (subCatId === 'dr_omar' || subCatId === 'clinics'), 
                 bookings: [], 
                 bookedSeats: 0, 
                 maxSeats: 14, 
@@ -1900,7 +1945,13 @@
         function approveSubmission(table, id) {
             if (table === 'directory') {
                 const item = dbItems.find(x => x.id === id);
-                if (item) item.status = 'approved';
+                if (item) {
+                    item.status = 'approved';
+                    // إذا كان من الأطباء أو المواصلات وليس له رمز سري، نضع له رمز افتراضي ليظهر فوراً في لوحة الأكواد
+                    if ((item.mainCatId === 'health' || item.mainCatId === 'transport') && !item.pinCode) {
+                        item.pinCode = item.isDoctorClinic ? '5678' : '1234';
+                    }
+                }
             } else if (table === 'offer') {
                 const offer = dbOffers.find(x => x.id === id);
                 if (offer) offer.status = 'approved';
