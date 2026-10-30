@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="dark">
 <head>
@@ -999,10 +1000,15 @@
         </div>
     </div>
 
-    <!-- Application JavaScript with Google Sheets Cloud Sync & Admin Controls -->
-    <script>
-        // تفعيل السحابة الحقيقية والربط الفعلي المباشر المتزامن بين جميع الهواتف
-        const CLOUD_SHEET_URL = "https://script.google.com/macros/s/AKfycbz_real_sync_derwa_smart_village_2026/exec";
+    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Live Multi-Device Relay) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // قناة البث والمزامنة السحابية الحقيقية المباشرة بين جميع الهواتف والأجهزة
+        const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_live_v8";
+        const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
 
         let defaultCategories = [
             {
@@ -1090,10 +1096,10 @@
             { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [], ratings: [4, 5, 4] }
         ];
 
-        let dbCategories = JSON.parse(localStorage.getItem('derwa_dbCategories')) || defaultCategories;
-        let dbItems = JSON.parse(localStorage.getItem('derwa_dbItems')) || defaultItems;
-        let dbOffers = JSON.parse(localStorage.getItem('derwa_dbOffers')) || [];
-        let dbJobs = JSON.parse(localStorage.getItem('derwa_dbJobs')) || [];
+        let dbCategories = JSON.parse(JSON.stringify(defaultCategories));
+        let dbItems = JSON.parse(JSON.stringify(defaultItems));
+        let dbOffers = [];
+        let dbJobs = [];
         let supervisors = [
             { email: 'elderwi.arabcont@gmail.com', name: 'المدير الأساسي (Super Admin)', role: 'super_admin' },
             { email: 'supervisor1@derwasmart.com', name: 'مشرف الدليل', role: 'supervisor' }
@@ -1103,65 +1109,224 @@
         let pendingEmail = '';
         let currentLang = 'ar';
         let loggedInProviderSession = null;
+        let lastSyncTimestamp = 0;
 
-        // دالة المزامنة السحابية الفورية والحقيقية
-        function syncWithCloud() {
-            localStorage.setItem('derwa_dbCategories', JSON.stringify(dbCategories));
-            localStorage.setItem('derwa_dbItems', JSON.stringify(dbItems));
-            localStorage.setItem('derwa_dbOffers', JSON.stringify(dbOffers));
-            localStorage.setItem('derwa_dbJobs', JSON.stringify(dbJobs));
-            
-            // إرسال البيانات فوراً للسحابة الحقيقية
-            fetch(CLOUD_SHEET_URL, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'update_all',
-                    timestamp: Date.now(),
-                    categories: dbCategories, 
-                    items: dbItems, 
-                    offers: dbOffers, 
-                    jobs: dbJobs 
-                })
-            }).catch(() => {});
-        }
+        // إعداد Firebase Firestore للربط السحابي المباشر
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'derwa-smart-village-app';
 
-        // دالة جلب التحديثات الحية من السحابة فور فتح أي هاتف
-        function fetchCloudUpdates() {
-            fetch(CLOUD_SHEET_URL, { method: 'GET', mode: 'cors' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.items) {
-                        dbCategories = data.categories || dbCategories;
-                        dbItems = data.items || dbItems;
-                        dbOffers = data.offers || dbOffers;
-                        dbJobs = data.jobs || dbJobs;
-                        localStorage.setItem('derwa_dbCategories', JSON.stringify(dbCategories));
-                        localStorage.setItem('derwa_dbItems', JSON.stringify(dbItems));
-                        localStorage.setItem('derwa_dbOffers', JSON.stringify(dbOffers));
-                        localStorage.setItem('derwa_dbJobs', JSON.stringify(dbJobs));
-                        renderHomeCategories();
+        async function initFirebaseCloud() {
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    const firebaseConfig = JSON.parse(__firebase_config);
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
                     }
-                })
-                .catch(() => {});
+
+                    onAuthStateChanged(auth, (user) => {
+                        currentUser = user;
+                        if (currentUser && db) {
+                            const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
+                            onSnapshot(stateDocRef, (docSnap) => {
+                                if (docSnap.exists()) {
+                                    const cloudData = docSnap.data();
+                                    if (cloudData.updatedAt && cloudData.updatedAt > lastSyncTimestamp) {
+                                        lastSyncTimestamp = cloudData.updatedAt;
+                                        if (cloudData.categoriesJson) dbCategories = JSON.parse(cloudData.categoriesJson);
+                                        if (cloudData.itemsJson) dbItems = JSON.parse(cloudData.itemsJson);
+                                        if (cloudData.offersJson) dbOffers = JSON.parse(cloudData.offersJson);
+                                        if (cloudData.jobsJson) dbJobs = JSON.parse(cloudData.jobsJson);
+                                        if (cloudData.supervisorsJson) supervisors = JSON.parse(cloudData.supervisorsJson);
+                                        refreshAllViews();
+                                    }
+                                }
+                            }, (err) => {
+                                console.warn("Firestore listener error:", err);
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn("Firebase init fallback to Live Relay:", e);
+            }
         }
 
-        // تحديث دوري كل 3 ثوانٍ لجلب أحدث بيانات القرية الحية من الهواتف الأخرى
-        setInterval(fetchCloudUpdates, 3000);
+        // تحديث كافة الواجهات فور وصول بيانات جديدة من هاتف آخر
+        function refreshAllViews() {
+            renderHomeCategories();
+            initJoinForm();
+            const offersTab = document.getElementById('tabOffers');
+            if (offersTab && !offersTab.classList.contains('hidden')) renderOffers();
+            const jobsTab = document.getElementById('tabJobs');
+            if (jobsTab && !jobsTab.classList.contains('hidden')) renderJobs();
+            const providerTab = document.getElementById('tabProvider');
+            if (providerTab && !providerTab.classList.contains('hidden')) {
+                if (loggedInProviderSession) {
+                    const updatedSession = dbItems.find(i => i.id === loggedInProviderSession.id);
+                    if (updatedSession) {
+                        loggedInProviderSession = updatedSession;
+                        renderActiveProviderDashboard(loggedInProviderSession);
+                    }
+                } else {
+                    initProviderDashboard();
+                }
+            }
+            if (currentLoggedInAdmin) {
+                renderAdminDashboard();
+            }
+            const badge = document.getElementById('activeCountBadge');
+            if (badge) {
+                badge.innerText = `متصل بالسحابة الحية (${dbItems.filter(i => i.status === 'approved').length} خدمة)`;
+            }
+        }
+
+        // تطبيق التحديثات الجزئية أو الكلية القادمة عبر البث السحابي بين الهواتف
+        function applyRemoteOperation(opObj) {
+            if (!opObj || !opObj.op) return;
+            if (opObj.ts && opObj.ts <= lastSyncTimestamp) return;
+            if (opObj.ts) lastSyncTimestamp = opObj.ts;
+
+            if (opObj.op === 'FULL_SYNC') {
+                if (opObj.cats) dbCategories = opObj.cats;
+                if (opObj.items) dbItems = opObj.items;
+                if (opObj.jobs) dbJobs = opObj.jobs;
+                if (opObj.sups) supervisors = opObj.sups;
+            } else if (opObj.op === 'CATS_SYNC' && opObj.cats) {
+                dbCategories = opObj.cats;
+            } else if (opObj.op === 'ITEM_UPSERT' && opObj.item) {
+                const idx = dbItems.findIndex(x => Number(x.id) === Number(opObj.item.id));
+                if (idx >= 0) dbItems[idx] = opObj.item;
+                else dbItems.push(opObj.item);
+            } else if (opObj.op === 'ITEM_DELETE' && opObj.id !== undefined) {
+                dbItems = dbItems.filter(x => Number(x.id) !== Number(opObj.id));
+            } else if (opObj.op === 'OFFER_UPSERT' && opObj.offer) {
+                const idx = dbOffers.findIndex(x => Number(x.id) === Number(opObj.offer.id));
+                if (idx >= 0) dbOffers[idx] = opObj.offer;
+                else dbOffers.push(opObj.offer);
+            } else if (opObj.op === 'OFFER_DELETE' && opObj.id !== undefined) {
+                dbOffers = dbOffers.filter(x => Number(x.id) !== Number(opObj.id));
+            } else if (opObj.op === 'JOB_UPSERT' && opObj.job) {
+                const idx = dbJobs.findIndex(x => Number(x.id) === Number(opObj.job.id));
+                if (idx >= 0) dbJobs[idx] = opObj.job;
+                else dbJobs.push(opObj.job);
+            } else if (opObj.op === 'JOB_DELETE' && opObj.id !== undefined) {
+                dbJobs = dbJobs.filter(x => Number(x.id) !== Number(opObj.id));
+            } else if (opObj.op === 'SUPS_SYNC' && opObj.sups) {
+                supervisors = opObj.sups;
+            }
+            refreshAllViews();
+        }
+
+        // إرسال أي تعديل فوراً إلى السحابة ليظهر على جميع الهواتف الأخرى
+        async function syncWithCloud(deltaPayload = null) {
+            const nowTs = Date.now();
+            lastSyncTimestamp = nowTs;
+
+            // 1. الحفظ في Firebase Firestore إذا كان متاحاً
+            if (db && currentUser) {
+                try {
+                    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
+                    await setDoc(stateDocRef, {
+                        updatedAt: nowTs,
+                        categoriesJson: JSON.stringify(dbCategories),
+                        itemsJson: JSON.stringify(dbItems),
+                        offersJson: JSON.stringify(dbOffers),
+                        jobsJson: JSON.stringify(dbJobs),
+                        supervisorsJson: JSON.stringify(supervisors)
+                    });
+                } catch (e) {
+                    console.warn("Firestore write error:", e);
+                }
+            }
+
+            // 2. البث الفوري عبر خادم ntfy السحابي لربط جميع الهواتف وتطبيقات الأندرويد (APK) ببعضها
+            try {
+                let messageToSend = deltaPayload ? { ...deltaPayload, ts: nowTs } : {
+                    op: 'FULL_SYNC',
+                    ts: nowTs,
+                    cats: dbCategories,
+                    items: dbItems,
+                    jobs: dbJobs,
+                    sups: supervisors
+                };
+
+                let bodyStr = JSON.stringify(messageToSend);
+                // إذا كان الحجم كبيراً، نرسل التحديث الجزئي لضمان وصوله الفوري
+                if (bodyStr.length > 3800 && deltaPayload) {
+                    bodyStr = JSON.stringify({ ...deltaPayload, ts: nowTs });
+                }
+
+                await fetch(LIVE_SYNC_URL, {
+                    method: 'POST',
+                    body: bodyStr
+                });
+            } catch (e) {
+                console.warn("Live relay post error:", e);
+            }
+
+            refreshAllViews();
+        }
+
+        // جلب السجل السحابي الكامل عند فتح التطبيق على أي هاتف والاشتراك في البث الحي
+        async function connectLiveMultiDeviceCloud() {
+            try {
+                const res = await fetch(`${LIVE_SYNC_URL}/json?poll=1&since=all`);
+                const text = await res.text();
+                const lines = text.trim().split('\n');
+                for (const line of lines) {
+                    if (!line) continue;
+                    try {
+                        const wrapper = JSON.parse(line);
+                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                            const opObj = JSON.parse(wrapper.message);
+                            applyRemoteOperation(opObj);
+                        }
+                    } catch (innerErr) {}
+                }
+            } catch (e) {
+                console.warn("Initial cloud history fetch error:", e);
+            }
+
+            // فتح اتصال حي ومستمر (SSE) لاستقبال أي إضافة من هاتف آخر في نفس اللحظة
+            try {
+                const evtSource = new EventSource(`${LIVE_SYNC_URL}/sse`);
+                evtSource.onmessage = (event) => {
+                    try {
+                        const wrapper = JSON.parse(event.data);
+                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                            const opObj = JSON.parse(wrapper.message);
+                            applyRemoteOperation(opObj);
+                        }
+                    } catch (err) {}
+                };
+            } catch (e) {
+                console.warn("SSE connection error:", e);
+            }
+        }
 
         function cleanupExpiredBookings() {
             const now = new Date();
+            let changed = false;
             dbItems.forEach(item => {
-                if (item.isDoctorClinic && item.bookings) {
+                if (item.isDoctorClinic && item.bookings && item.bookings.length > 0) {
+                    const beforeLen = item.bookings.length;
                     item.bookings = item.bookings.filter(b => {
                         const bookingDate = new Date(b.date + 'T23:59:59');
                         const expireTime = new Date(bookingDate.getTime() + (6 * 60 * 60 * 1000));
                         return now < expireTime;
                     });
+                    if (item.bookings.length !== beforeLen) changed = true;
                 }
             });
-            syncWithCloud();
+            if (changed) syncWithCloud();
         }
         setInterval(cleanupExpiredBookings, 60000);
 
@@ -1218,8 +1383,8 @@
         function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
         function renderHomeCategories() {
-            cleanupExpiredBookings();
             const grid = document.getElementById('categoriesGrid');
+            if (!grid) return;
             const approvedItems = dbItems.filter(i => i.type === 'directory' && i.status === 'approved');
             const approvedOffers = dbOffers.filter(o => o.status === 'approved');
             
@@ -1285,7 +1450,6 @@
         }
 
         function openCategoryDetail(catId) {
-            cleanupExpiredBookings();
             const cat = dbCategories.find(c => c.id === catId);
             if (!cat) return;
             document.getElementById('modalCategoryTitle').innerText = currentLang === 'en' ? cat.nameEn : cat.name;
@@ -1351,7 +1515,7 @@
             if (!item) return;
             if (!item.ratings) item.ratings = [];
             item.ratings.push(stars);
-            syncWithCloud();
+            syncWithCloud({ op: 'ITEM_UPSERT', item });
             showAlert('شكراً لك', `تم تسجيل تقييمك (${stars} نجوم) وحفظه سحابياً.`);
             openCategoryDetail(item.mainCatId);
         }
@@ -1389,13 +1553,13 @@
             item.bookedSeats = (item.bookedSeats || 0) + seatsReq;
             if (!item.passengersList) item.passengersList = [];
             item.passengersList.push({ name: pName, phone: pPhone, seats: seatsReq, date: bDate, direction: bDir });
-            syncWithCloud();
+            syncWithCloud({ op: 'ITEM_UPSERT', item });
 
             closeBookingModal();
             closeCategoryModal();
             const waNumber = item.whatsapp || ('2' + item.phone);
             const waMsg = encodeURIComponent(`مرحباً ${item.name}، تم حجز (${seatsReq}) مقعد باتجاه (${bDir}) باسم: ${pName} - هاتف: ${pPhone} - تاريخ: ${bDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح وحفظه سحابياً. أرسل التأكيد للسائق عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح وحفظه سحابياً لدى السائق. أرسل التأكيد عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
         }
 
         function openDoctorBookingModal(itemId) {
@@ -1421,13 +1585,13 @@
 
             if (!item.bookings) item.bookings = [];
             item.bookings.push({ name: patName, phone: patPhone, date: chosenDate });
-            syncWithCloud();
+            syncWithCloud({ op: 'ITEM_UPSERT', item });
 
             closeDoctorBookingModal();
             closeCategoryModal();
             const waNumber = item.whatsapp || ('2' + item.phone);
             const waMsg = encodeURIComponent(`مرحباً ${item.name}، حجز موعد جديد باسم: ${patName} - هاتف: ${patPhone} - تاريخ: ${chosenDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) كشف العيادة لتاريخ ${chosenDate} سحابياً. أرسل للإدارة عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) في كشف العيادة لتاريخ ${chosenDate} سحابياً. أرسل للإدارة عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
         }
 
         function openAdminAddItemToSub(mainCatId, subCatId) {
@@ -1475,14 +1639,9 @@
                     parentCat.subCategories.push({ id: 'sub_' + Date.now(), name, nameEn: name });
                 }
             }
-            syncWithCloud();
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
             closeAddCategoryModal();
-            renderHomeCategories();
-            initJoinForm();
-            if (currentLoggedInAdmin) {
-                renderCategoriesTreeForAdmin();
-            }
-            showAlert('تم الحفظ', 'تمت إضافة البند وحفظه سحابياً.');
+            showAlert('تم الحفظ', 'تمت إضافة البند ومزامنته سحابياً لجميع الأجهزة فوراً.');
         }
 
         async function pickContactFromDevice() {
@@ -1513,7 +1672,21 @@
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(evt) { document.getElementById('offerImageBase64').value = evt.target.result; };
+                reader.onload = function(evt) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 220;
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+                        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        document.getElementById('offerImageBase64').value = canvas.toDataURL('image/jpeg', 0.5);
+                    };
+                    img.src = evt.target.result;
+                };
                 reader.readAsDataURL(file);
             }
         }
@@ -1522,13 +1695,15 @@
             const mainId = document.getElementById('joinMainCat').value;
             const subSelect = document.getElementById('joinSubCat');
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            if (cat && subSelect) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
 
         function initJoinForm() {
             const mainSelect = document.getElementById('joinMainCat');
             if (mainSelect) {
+                const prevVal = mainSelect.value;
                 mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                if (prevVal && dbCategories.some(c => c.id === prevVal)) mainSelect.value = prevVal;
                 populateJoinSubCats();
             }
         }
@@ -1544,11 +1719,12 @@
 
             const newId = dbItems.length > 0 ? Math.max(...dbItems.map(i => Number(i.id) || 1)) + 1 : 1;
             const itemStatus = currentLoggedInAdmin ? 'approved' : 'pending';
-            const isDoc = mainCatId === 'health' && subCatId === 'dr_omar';
+            const isDoc = mainCatId === 'health' && (subCatId === 'dr_omar' || subCatId === 'clinics');
 
-            dbItems.push({ id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: itemStatus, isDoctorClinic: isDoc, bookings: [], ratings: [], pinCode: '1234' });
-            syncWithCloud();
-            showAlert('تم إرسال الطلب', currentLoggedInAdmin ? 'تمت إضافة الجهة ونشرها مباشرة.' : 'تم إرسال طلب انضمامك بنجاح للإدارة للمراجعة ولن يظهر للعامة إلا بعد الموافقة.');
+            const newItem = { id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: itemStatus, isDoctorClinic: isDoc, bookings: [], ratings: [], pinCode: isDoc ? '5678' : '1234' };
+            dbItems.push(newItem);
+            syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
+            showAlert('تم إرسال الطلب', currentLoggedInAdmin ? 'تمت إضافة الجهة ونشرها مباشرة على جميع الأجهزة.' : 'تم إرسال طلب انضمامك بنجاح للإدارة للمراجعة ولن يظهر للعامة إلا بعد الموافقة.');
             switchTab('home');
         }
 
@@ -1561,11 +1737,12 @@
             const image = document.getElementById('offerImageBase64').value.trim();
             const description = document.getElementById('offerDesc').value.trim();
             const phone = document.getElementById('offerPhone').value.trim();
-            dbOffers.push({ id: Date.now(), type: 'offer', title, store, image, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
-            syncWithCloud();
+            const newOffer = { id: Date.now(), type: 'offer', title, store, image, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' };
+            dbOffers.push(newOffer);
+            syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
             closeAddOfferModal();
             renderOffers();
-            showAlert('تم إرسال العرض', currentLoggedInAdmin ? 'تم نشر العرض مباشرة.' : 'تم إرسال العرض للإدارة للمراجعة والموافقة عليه.');
+            showAlert('تم إرسال العرض', currentLoggedInAdmin ? 'تم نشر العرض مباشرة لجميع الهواتف.' : 'تم إرسال العرض للإدارة للمراجعة والموافقة عليه.');
         }
 
         function openAddJobModal() { document.getElementById('addJobModal').classList.remove('hidden'); }
@@ -1576,16 +1753,17 @@
             const store = document.getElementById('jobStore').value.trim();
             const description = document.getElementById('jobDesc').value.trim();
             const phone = document.getElementById('jobPhone').value.trim();
-            dbJobs.push({ id: Date.now(), type: 'job', title, store, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' });
-            syncWithCloud();
+            const newJob = { id: Date.now(), type: 'job', title, store, description, phone, status: currentLoggedInAdmin ? 'approved' : 'pending' };
+            dbJobs.push(newJob);
+            syncWithCloud({ op: 'JOB_UPSERT', job: newJob });
             closeAddJobModal();
             renderJobs();
-            showAlert('تم إرسال الوظيفة', currentLoggedInAdmin ? 'تم نشر الوظيفة مباشرة.' : 'تم إرسال الوظيفة للإدارة للمراجعة والموافقة عليها.');
+            showAlert('تم إرسال الوظيفة', currentLoggedInAdmin ? 'تم نشر الوظيفة مباشرة لجميع الهواتف.' : 'تم إرسال الوظيفة للإدارة للمراجعة والموافقة عليها.');
         }
 
         function openAdminLoginArea() {
             if (currentLoggedInAdmin) { renderAdminDashboard(); switchTab('admin'); return; }
-            document.getElementById('loginEmailInput').value = '';
+            document.getElementById('loginEmailInput').value = 'elderwi.arabcont@gmail.com';
             document.getElementById('otpStep1').classList.remove('hidden');
             document.getElementById('otpStep2').classList.add('hidden');
             document.getElementById('otpModal').classList.remove('hidden');
@@ -1651,23 +1829,25 @@
 
         function renderAdminPinsTable() {
             const container = document.getElementById('adminPinsTableContainer');
-            // عرض كل الأطباء والعيادات ومواصلات خطوط السير والمواصلات العامة المضافة مباشرة أو المعتمدة
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)));
+            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId));
             if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أو مواصلات مسجلة</p>`; return; }
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">القسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic ? 'عيادة وطبيب' : 'مواصلات وموقف'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
+            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">القسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic || p.mainCatId === 'health' ? 'عيادة وطبيب' : 'مواصلات وموقف'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function updateProviderPin(itemId) {
             const newPin = document.getElementById('pinInput_' + itemId).value.trim();
             if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز السري 4 أرقام.', false); return; }
             const item = dbItems.find(i => i.id === itemId);
-            if (item) { item.pinCode = newPin; syncWithCloud(); showAlert('تم الحفظ', 'تم تحديث الرمز السري بنجاح.'); }
+            if (item) {
+                item.pinCode = newPin;
+                syncWithCloud({ op: 'ITEM_UPSERT', item });
+                showAlert('تم الحفظ', 'تم تحديث الرمز السري ومزامنته سحابياً لجميع الأجهزة.');
+            }
         }
 
         function initProviderDashboard() {
             const container = document.getElementById('providerDashboardContent');
             const selDropdown = document.getElementById('providerSelectDropdown');
-            // فلترة دقيقة تحصر القائمة في الأطباء والعيادات وخطوط السير فقط مع استبعاد تام للصيدليات والمحلات
             const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId));
             
             if (providers.length === 0) { 
@@ -1677,7 +1857,7 @@
             }
 
             if (selDropdown) {
-                selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic ? 'عيادة' : 'مواصلات'})</option>`).join('');
+                selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic || p.mainCatId === 'health' ? 'عيادة' : 'مواصلات'})</option>`).join('');
             }
 
             if (!loggedInProviderSession) {
@@ -1759,7 +1939,7 @@
             const container = document.getElementById('providerDashboardContent');
             const todayStr = new Date().toISOString().split('T')[0];
 
-            if (item.isDoctorClinic) {
+            if (item.isDoctorClinic || item.mainCatId === 'health') {
                 const todayB = (item.bookings || []).filter(b => b.date === todayStr);
                 container.innerHTML = `
                     <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
@@ -1839,7 +2019,7 @@
             if (!item) return;
             const todayStr = new Date().toISOString().split('T')[0];
             item.bookings = (item.bookings || []).filter(b => b.date !== todayStr);
-            syncWithCloud();
+            syncWithCloud({ op: 'ITEM_UPSERT', item });
             initProviderDashboard();
             showAlert('تم التصفير', 'تم تصفير كشف حجوزات العيادة اليومية سحابياً.');
         }
@@ -1850,7 +2030,7 @@
             item.bookedSeats = 0;
             item.passengersList = [];
             item.currentTripDirection = directionName;
-            syncWithCloud();
+            syncWithCloud({ op: 'ITEM_UPSERT', item });
             initProviderDashboard();
             showAlert('نقلة جديدة', `تم بدء نقلة جديدة باتجاه: (${directionName}) وتصفير عداد المقاعد سحابياً.`);
         }
@@ -1866,7 +2046,7 @@
             const mainId = document.getElementById('admFormMainCat').value;
             const subSel = document.getElementById('admFormSubCat');
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat) subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            if (cat && subSel) subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
         }
 
         function onAdminMainCatChange() {
@@ -1892,14 +2072,14 @@
             const whatsapp = document.getElementById('admFormWhatsapp').value.trim();
             const address = document.getElementById('admFormAddress').value.trim();
             
-            let pinCode = '1234';
+            let pinCode = mainCatId === 'health' ? '5678' : '1234';
             const pinInput = document.getElementById('admFormPin');
             if ((mainCatId === 'health' || mainCatId === 'transport') && pinInput && pinInput.value.trim()) {
                 pinCode = pinInput.value.trim();
             }
 
             const newId = dbItems.length > 0 ? Math.max(...dbItems.map(i => Number(i.id) || 1)) + 1 : 1;
-            dbItems.push({ 
+            const newItem = { 
                 id: newId, 
                 type: 'directory', 
                 name, 
@@ -1916,11 +2096,11 @@
                 maxSeats: 14, 
                 passengersList: [], 
                 ratings: [] 
-            });
-            syncWithCloud();
+            };
+            dbItems.push(newItem);
+            syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
             closeAdminAddServiceModal();
-            renderHomeCategories();
-            showAlert('تمت الإضافة', 'تم نشر الجهة وحفظها سحابياً بنجاح.');
+            showAlert('تمت الإضافة', 'تم نشر الجهة ومزامنتها سحابياً على جميع الهواتف فوراً.');
         }
 
         function addNewSupervisor() {
@@ -1930,8 +2110,9 @@
             supervisors.push({ email, name, role: 'supervisor' });
             document.getElementById('newSuperName').value = '';
             document.getElementById('newSuperEmail').value = '';
+            syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
             renderSupervisorsList();
-            showAlert('تم التعيين', 'تم تعيين المشرف بنجاح.');
+            showAlert('تم التعيين', 'تم تعيين المشرف ومزامنته سحابياً بنجاح.');
         }
 
         function renderSupervisorsList() {
@@ -1947,12 +2128,14 @@
 
         function deleteSupervisor(idx) {
             supervisors.splice(idx, 1);
+            syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
             renderSupervisorsList();
             showAlert('تم الحذف', 'تم إزالة المشرف بنجاح.');
         }
 
         function renderAdminApprovalTable() {
             const tbody = document.getElementById('adminApprovalTableBody');
+            if (!tbody) return;
             let allPending = [];
             dbItems.forEach(i => { if (i.status !== 'approved') allPending.push({ ...i, targetTable: 'directory' }); });
             dbOffers.forEach(o => { if (o.status !== 'approved') allPending.push({ ...o, targetTable: 'offer', name: o.title }); });
@@ -1980,32 +2163,36 @@
                     if ((item.mainCatId === 'health' || item.mainCatId === 'transport') && !item.pinCode) {
                         item.pinCode = item.isDoctorClinic ? '5678' : '1234';
                     }
+                    syncWithCloud({ op: 'ITEM_UPSERT', item });
                 }
             } else if (table === 'offer') {
                 const offer = dbOffers.find(x => x.id === id);
-                if (offer) offer.status = 'approved';
+                if (offer) {
+                    offer.status = 'approved';
+                    syncWithCloud({ op: 'OFFER_UPSERT', offer });
+                }
             } else if (table === 'job') {
                 const job = dbJobs.find(x => x.id === id);
-                if (job) job.status = 'approved';
+                if (job) {
+                    job.status = 'approved';
+                    syncWithCloud({ op: 'JOB_UPSERT', job });
+                }
             }
-            syncWithCloud();
-            renderAdminApprovalTable();
-            renderHomeCategories();
-            showAlert('تم الاعتماد', 'تمت الموافقة ونشر العنصر سحابياً لجميع المستخدمين.');
+            showAlert('تم الاعتماد', 'تمت الموافقة ونشر العنصر سحابياً لجميع الهواتف.');
         }
 
         function deleteSubmission(table, id) {
             if (table === 'directory') {
                 dbItems = dbItems.filter(x => x.id !== id);
+                syncWithCloud({ op: 'ITEM_DELETE', id });
             } else if (table === 'offer') {
                 dbOffers = dbOffers.filter(x => x.id !== id);
+                syncWithCloud({ op: 'OFFER_DELETE', id });
             } else if (table === 'job') {
                 dbJobs = dbJobs.filter(x => x.id !== id);
+                syncWithCloud({ op: 'JOB_DELETE', id });
             }
-            syncWithCloud();
-            renderAdminApprovalTable();
-            renderHomeCategories();
-            showAlert('تم الحذف', 'تم حذف العنصر بنجاح.');
+            showAlert('تم الحذف', 'تم حذف العنصر سحابياً بنجاح.');
         }
 
         function renderCategoriesTreeForAdmin() {
@@ -2045,10 +2232,8 @@
             if (!cat || !inputVal) { showAlert('خطأ', 'أدخل اسم البند الصحيح.', false); return; }
             cat.name = inputVal;
             cat.nameEn = inputVal;
-            syncWithCloud();
-            renderCategoriesTreeForAdmin();
-            renderHomeCategories();
-            showAlert('تم التعديل', 'تم تحديث اسم البند الرئيسي وحفظه سحابياً.');
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            showAlert('تم التعديل', 'تم تحديث اسم البند الرئيسي ومزامنته سحابياً لجميع الهواتف.');
         }
 
         function updateSubCategoryName(catId, subId) {
@@ -2059,26 +2244,20 @@
             if (!sub || !inputVal) { showAlert('خطأ', 'أدخل اسم البند الفرعي الصحيح.', false); return; }
             sub.name = inputVal;
             sub.nameEn = inputVal;
-            syncWithCloud();
-            renderCategoriesTreeForAdmin();
-            renderHomeCategories();
-            showAlert('تم التعديل', 'تم تحديث اسم البند الفرعي وحفظه سحابياً.');
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            showAlert('تم التعديل', 'تم تحديث اسم البند الفرعي ومزامنته سحابياً لجميع الهواتف.');
         }
 
         function deleteMainCategory(catIdx) {
             dbCategories.splice(catIdx, 1);
-            syncWithCloud();
-            renderCategoriesTreeForAdmin();
-            renderHomeCategories();
-            showAlert('تم الحذف', 'تم حذف القسم الرئيسي وجميع بنوده الفرعية نهائياً.');
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            showAlert('تم الحذف', 'تم حذف القسم الرئيسي وجميع بنوده الفرعية سحابياً.');
         }
 
         function deleteSubCategory(catIdx, subIdx) {
             dbCategories[catIdx].subCategories.splice(subIdx, 1);
-            syncWithCloud();
-            renderCategoriesTreeForAdmin();
-            renderHomeCategories();
-            showAlert('تم الحذف', 'تم حذف البند الفرعي بنجاح.');
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            showAlert('تم الحذف', 'تم حذف البند الفرعي سحابياً بنجاح.');
         }
 
         function applyTheme(mode) {
@@ -2103,7 +2282,7 @@
                 <h2 class="font-bold text-sm text-white">1. مقدمة</h2>
                 <p>يُعد تطبيق (الدليل الذكى لقرية دروة مركز ملوى) دليلاً خدمياً محلياً ومجانياً ومخصصاً لخدمة أهالي قرية دروة بمركز ملوي ومساعدتهم في الوصول إلى الخدمات والأطباء ومواقف المواصلات بكل سهولة.</p>
                 <h2 class="font-bold text-sm text-white">2. جمع البيانات والسحابة</h2>
-                <p>يتم مزامنة البيانات عبر سحابة Google Sheets لضمان دقة ووصول التحديثات لجميع أهالي القرية فورياً، مع حماية خصوصية الحجوزات وإزالتها تلقائياً.</p>
+                <p>يتم مزامنة البيانات عبر السحابة الفورية لضمان دقة ووصول التحديثات لجميع أهالي القرية فورياً على كافة الهواتف، مع حماية خصوصية الحجوزات وإزالتها تلقائياً.</p>
             `;
             document.getElementById('privacyModal').classList.remove('hidden');
         }
@@ -2122,12 +2301,32 @@
             document.body.removeChild(ta);
         }
 
-        window.onload = function() {
-            fetchCloudUpdates();
+        // ربط جميع الدوال بـ window لتعمل الأزرار بكفاءة تامة
+        Object.assign(window, {
+            openNotificationsModal, closeNotificationsModal, shareApp, filterHomeSearch, switchTab,
+            openContactModal, closeContactModal, submitContactMessage, openAddOfferModal, closeAddOfferModal,
+            submitOffer, handleOfferImageUpload, openAddJobModal, closeAddJobModal, submitJob,
+            pickContactFromDevice, populateJoinSubCats, submitJoinDirectly, openSettingsModal, closeSettingsModal,
+            openDeveloperModal, closeDeveloperModal, openAboutModal, closeAboutModal, openPrivacyModal,
+            closePrivacyModal, openAdminLoginArea, closeOtpModal, requestAdminOtp, verifyAdminOtp, logoutAdmin,
+            renderProviderDashboard, initProviderDashboard, verifyProviderGlobalPin, verifySpecificProviderPin,
+            logoutProviderSession, clearClinicBookings, resetDriverSeatsWithDir, switchAdminSubTab,
+            openAdminAddServiceModal, closeAdminAddServiceModal, onAdminMainCatChange, adminSaveServiceDirectly,
+            openAddCategoryModal, closeAddCategoryModal, toggleCatParentSelect, saveNewCategory,
+            addNewSupervisor, deleteSupervisor, closeCategoryModal, openCategoryDetail, rateService,
+            openAdminAddItemToSub, openBookingModal, closeBookingModal, confirmBooking, openDoctorBookingModal,
+            closeDoctorBookingModal, confirmDoctorBooking, applyTheme, applyColor, applyLanguage,
+            closeCustomAlert, updateProviderPin, approveSubmission, deleteSubmission,
+            updateCategoryName, updateSubCategoryName, deleteMainCategory, deleteSubCategory
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
             renderHomeCategories();
             initJoinForm();
+            initFirebaseCloud();
+            connectLiveMultiDeviceCloud();
             cleanupExpiredBookings();
-        };
+        });
     </script>
 </body>
 </html>
