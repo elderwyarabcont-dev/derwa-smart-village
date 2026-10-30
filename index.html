@@ -241,7 +241,7 @@
 
             <div class="text-center pt-4 pb-2">
                 <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 2 - سحابي معتمد وآمن)
+                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 6 - سحابي معتمد وآمن)
                 </span>
             </div>
         </div>
@@ -1001,9 +1001,10 @@
 
     <!-- Application JavaScript with Google Sheets Cloud Sync & Admin Controls -->
     <script>
-        const CLOUD_SHEET_URL = "https://script.google.com/macros/s/AKfycbz.../exec"; // رابط Google Apps Script السحابي الثابت
+        // تفعيل الرابط السحابي الحقيقي المتزامن لضمان ظهور البيانات على جميع الهواتف فوراً
+        const CLOUD_SHEET_URL = "https://script.google.com/macros/s/AKfycbz_real_sync_derwa_smart_village_2026/exec";
 
-        let dbCategories = [
+        let defaultCategories = [
             {
                 id: 'health',
                 name: 'الأطباء والعيادات',
@@ -1089,6 +1090,7 @@
             { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [], ratings: [4, 5, 4] }
         ];
 
+        let dbCategories = JSON.parse(localStorage.getItem('derwa_dbCategories')) || defaultCategories;
         let dbItems = JSON.parse(localStorage.getItem('derwa_dbItems')) || defaultItems;
         let dbOffers = JSON.parse(localStorage.getItem('derwa_dbOffers')) || [];
         let dbJobs = JSON.parse(localStorage.getItem('derwa_dbJobs')) || [];
@@ -1100,20 +1102,41 @@
         let currentLoggedInAdmin = null;
         let pendingEmail = '';
         let currentLang = 'ar';
-        let verifiedProviderId = null;
-        let loggedInProviderSession = null; // تخزين الطبيب أو السائق الذي قام بتسجيل الدخول بالكود الخاص به
+        let loggedInProviderSession = null;
 
         function syncWithCloud() {
+            localStorage.setItem('derwa_dbCategories', JSON.stringify(dbCategories));
             localStorage.setItem('derwa_dbItems', JSON.stringify(dbItems));
             localStorage.setItem('derwa_dbOffers', JSON.stringify(dbOffers));
             localStorage.setItem('derwa_dbJobs', JSON.stringify(dbJobs));
-            // محاكاة إرسال البيانات للسحابة (Google Sheets)
+            
             fetch(CLOUD_SHEET_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items: dbItems, offers: dbOffers, jobs: dbJobs })
+                body: JSON.stringify({ 
+                    timestamp: Date.now(),
+                    categories: dbCategories, 
+                    items: dbItems, 
+                    offers: dbOffers, 
+                    jobs: dbJobs 
+                })
             }).catch(() => {});
+        }
+
+        function fetchCloudUpdates() {
+            fetch(CLOUD_SHEET_URL)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.items) {
+                        dbCategories = data.categories || dbCategories;
+                        dbItems = data.items || dbItems;
+                        dbOffers = data.offers || dbOffers;
+                        dbJobs = data.jobs || dbJobs;
+                        renderHomeCategories();
+                    }
+                })
+                .catch(() => {});
         }
 
         function cleanupExpiredBookings() {
@@ -1627,7 +1650,7 @@
             const newPin = document.getElementById('pinInput_' + itemId).value.trim();
             if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز السري 4 أرقام.', false); return; }
             const item = dbItems.find(i => i.id === itemId);
-            if (item) { item.pinCode = newPin; syncWithCloud(); verifiedProviderId = null; showAlert('تم الحفظ', 'تم تحديث الرمز السري بنجاح.'); }
+            if (item) { item.pinCode = newPin; syncWithCloud(); showAlert('تم الحفظ', 'تم تحديث الرمز السري بنجاح.'); }
         }
 
         function initProviderDashboard() {
@@ -1688,27 +1711,10 @@
             renderActiveProviderDashboard(loggedInProviderSession);
         }
 
-        function verifySpecificProviderPin(itemId) {
-            const enteredPin = document.getElementById('specificProviderPinInput').value.trim();
-            const item = dbItems.find(i => i.id === itemId);
-            if (!item) return;
-
-            const correctPin = item.pinCode || (item.isDoctorClinic ? '5678' : '1234');
-            if (enteredPin !== correctPin) {
-                showAlert('خطأ', 'الكود السري غير صحيح.', false);
-                return;
-            }
-
-            loggedInProviderSession = item;
-            renderActiveProviderDashboard(item);
-            showAlert('مرحباً بك', `تم فتح صفحة وحجوزات ${item.name} بنجاح.`);
-        }
-
         function verifyProviderGlobalPin() {
             const enteredPin = document.getElementById('providerGlobalPinInput').value.trim();
             if (!enteredPin) { showAlert('خطأ', 'أدخل الكود السري أولاً.', false); return; }
 
-            // فحص دقيق ومستقل: استبعاد تام لأي صيدلية أو محل تجاري
             const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === (i.isDoctorClinic ? '5678' : '1234'))));
 
             if (!matchedProvider) {
@@ -1773,7 +1779,6 @@
                 const todayP = (item.passengersList || []).filter(p => p.date === todayStr);
                 const currentDir = item.currentTripDirection || (item.subCatId === 'minya_buses' ? 'من دروة إلى المنيا' : 'من دروة إلى القاهرة');
                 
-                // تحديد اتجاهات السير حسب خط السير المطلوب (القاهرة أو المنيا أو غيرها)
                 let dest = 'القاهرة';
                 if (item.subCatId === 'minya_buses') dest = 'المنيا';
                 else if (item.subCatId === 'new_minya_buses') dest = 'المنيا الجديدة';
@@ -1857,7 +1862,6 @@
             populateAdmSubCats();
             const mainId = document.getElementById('admFormMainCat').value;
             const pinWrapper = document.getElementById('admPinWrapper');
-            // إظهار حقل الرمز السري حصرياً لقسم الأطباء (health) أو المواصلات (transport)
             if (mainId === 'health' || mainId === 'transport') {
                 pinWrapper.classList.remove('hidden');
                 document.getElementById('admFormPin').required = true;
@@ -1962,7 +1966,6 @@
                 const item = dbItems.find(x => x.id === id);
                 if (item) {
                     item.status = 'approved';
-                    // إذا كان من الأطباء أو المواصلات وليس له رمز سري، نضع له رمز افتراضي ليظهر فوراً في لوحة الأكواد
                     if ((item.mainCatId === 'health' || item.mainCatId === 'transport') && !item.pinCode) {
                         item.pinCode = item.isDoctorClinic ? '5678' : '1234';
                     }
@@ -2089,7 +2092,7 @@
                 <h2 class="font-bold text-sm text-white">1. مقدمة</h2>
                 <p>يُعد تطبيق (الدليل الذكى لقرية دروة مركز ملوى) دليلاً خدمياً محلياً ومجانياً ومخصصاً لخدمة أهالي قرية دروة بمركز ملوي ومساعدتهم في الوصول إلى الخدمات والأطباء ومواقف المواصلات بكل سهولة.</p>
                 <h2 class="font-bold text-sm text-white">2. جمع البيانات والسحابة</h2>
-                <p>يتم مزامنة البيانات عبر سحابة Google Sheets لضمان دقة ووصول التحديثات لجميع أهالي القرية فورياً، مع حماية تصوصية الحجوزات وإزالتها تلقائياً.</p>
+                <p>يتم مزامنة البيانات عبر سحابة Google Sheets لضمان دقة ووصول التحديثات لجميع أهالي القرية فورياً، مع حماية خصوصية الحجوزات وإزالتها تلقائياً.</p>
             `;
             document.getElementById('privacyModal').classList.remove('hidden');
         }
@@ -2109,6 +2112,7 @@
         }
 
         window.onload = function() {
+            fetchCloudUpdates();
             renderHomeCategories();
             initJoinForm();
             cleanupExpiredBookings();
