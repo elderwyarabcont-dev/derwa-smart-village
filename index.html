@@ -158,7 +158,7 @@
                 </div>
 
                 <div id="heroDescText" class="pt-4 mt-4 text-slate-300 text-xs md:text-sm leading-relaxed border-t border-slate-800/80">
-                    تطبيق (الدليل الذكى لقرية دروة مركز ملوى) هو الدليل الرقمي الشامل لقرية دروة بمركز ملوي، والمصمم خصيصاً لتحويلها إلى قرية ذكية. يجمع التطبيق كافة الخدمات الحيوية ومواقف المواصلات وحجوزات العيادات الطبية اليومية وتقييمات الخدمات بالنجوم.
+                    تطبيق (الدليل الذكى لقرية دروة مركز ملوى) هو الدليل الرقمي الشامل لقرية دروة بمركز ملوي، والمصمم خصيصاً لتحويلها إلى قرية ذكية. يجمع التطبيق كافة الخدمات ومواقف المواصلات وحجوزات العيادات وتقييمات الخدمات بالنجوم.
                 </div>
 
                 <!-- Search Input -->
@@ -284,7 +284,7 @@
 
             <div class="text-center pt-4 pb-2">
                 <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 2.5 (مع تقييمات النجوم السحابية)
+                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 2.5 (مع التقييمات والسحابة المباشرة)
                 </span>
             </div>
         </div>
@@ -374,7 +374,7 @@
                     </div>
 
                     <button type="submit" id="submitJoinBtnText" class="w-full py-3.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-primary/20">
-                        إرسال الطلب مباشرة لوحة تحكم الإدارة
+                        إرسال الطلب مباشرة لوحة تحكم الإدارة سحابياً
                     </button>
                 </form>
             </div>
@@ -1317,7 +1317,6 @@
                         const remaining = max - booked;
                         const tripDir = item.currentTripDirection || 'النقلة الحالية متاحة';
                         
-                        // Rating calculation
                         const ratings = item.ratings || [];
                         const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'جديد';
                         const starsHtml = ratings.length > 0 ? '★'.repeat(Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) + '☆'.repeat(5 - Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) : '☆☆☆☆☆';
@@ -1367,7 +1366,7 @@
                     ratings: item.ratings
                 });
             }
-            showAlert('شكراً لك', `تم تسجيل تقييمك (${stars} نجوم) بنجاح وحفظه سحابياً.`);
+            showAlert('شكراً لك', `تم تسجيل تقييمك (${stars} نجوم) وحفظه سحابياً.`);
             openCategoryDetail(item.mainCatId);
         };
 
@@ -1416,7 +1415,7 @@
             closeCategoryModal();
             const waNumber = item.whatsapp || ('2' + item.phone);
             const waMsg = encodeURIComponent(`مرحباً ${item.name}، تم حجز (${seatsReq}) مقعد باتجاه (${bDir}) باسم: ${pName} - هاتف: ${pPhone} - تاريخ: ${bDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح وسحابياً. أرسل التأكيد للسائق عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم تسجيل الحجز', `تم حجز ${seatsReq} مقعد بنجاح. أرسل التأكيد للسائق عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
         };
 
         window.openDoctorBookingModal = function(itemId) {
@@ -1453,7 +1452,7 @@
             closeCategoryModal();
             const waNumber = item.whatsapp || ('2' + item.phone);
             const waMsg = encodeURIComponent(`مرحباً ${item.name}، حجز موعد جديد باسم: ${patName} - هاتف: ${patPhone} - تاريخ: ${chosenDate} عبر تطبيق الدليل الذكي لدروة.`);
-            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) بكشف العيادة سحابياً لتاريخ ${chosenDate}. أرسل للإدارة عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
+            showAlert('تم حجز الموعد', `تم تسجيل (${patName}) كشف العيادة سحابياً لتاريخ ${chosenDate}. أرسل للإدارة عبر واتساب:`, true, `https://wa.me/${waNumber}?text=${waMsg}`);
         };
 
         window.openAdminAddItemToSub = function(mainCatId, subCatId) {
@@ -1484,7 +1483,7 @@
                 document.getElementById('joinName').value = 'د. عيادة أو محل تجاري';
                 document.getElementById('joinPhone').value = '01011223344';
                 document.getElementById('joinWhatsapp').value = '201011223344';
-                showAlert('اختيار تجريبي', 'تم تحميل بيانات تجريبية من الهاتف، يمكنك التعديل بحرية.');
+                showAlert('اختيار تجريبي', 'تم تحميل بيانات جهة اتصال تجريبية، يمكنك التعديل بحرية.');
             }
         }
         window.pickContactFromDevice = pickContactFromDevice;
@@ -1527,7 +1526,7 @@
             if (window.db) {
                 await setDoc(doc(window.db, 'artifacts', window.appId, 'public', 'data', 'items', newId), newItem);
             }
-            showAlert('تم إرسال الطلب', 'تم إرسال طلب انضمامك بنجاح للإدارة للمراجعة وسيعتمد للجميع.');
+            showAlert('تم إرسال الطلب سحابياً', 'تم إرسال طلب انضمامك بنجاح للإدارة للمراجعة وسيعتمد للجميع.');
             switchTab('home');
         };
 
@@ -1762,7 +1761,7 @@
             }
             closeAdminAddServiceModal();
             renderHomeCategories();
-            showAlert('تمت الإضافة سحابياً', 'تم نشر الجهة المباشرة للجميع.');
+            showAlert('تمت الإضافة سحابياً', 'تم نشر الجهة للجميع فوراً.');
         };
 
         window.openAddCategoryModal = function() { document.getElementById('addCategoryModal').classList.remove('hidden'); };
