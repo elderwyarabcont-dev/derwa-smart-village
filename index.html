@@ -419,7 +419,7 @@
                 <div onclick="switchTab('provider')" class="bg-cardBg border border-blue-500/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 transition shadow-lg">
                     <div class="flex items-center space-x-3 space-x-reverse text-blue-400 font-bold">
                         <i class="fa-solid fa-calendar-check text-xl ml-3"></i>
-                        <span>لوحة تحكم الأطباء والسائقين (إدارة الحجوزات)</span>
+                        <span id="menuProviderDashText">لوحة تحكم الأطباء والسائقين (إدارة الحجوزات)</span>
                     </div>
                     <i class="fa-solid fa-angle-left text-blue-400"></i>
                 </div>
@@ -437,7 +437,7 @@
                 <div onclick="openSupervisorLoginModal()" class="bg-cardBg border border-purple-500/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 transition shadow-lg">
                     <div class="flex items-center space-x-3 space-x-reverse text-purple-400 font-bold">
                         <i class="fa-solid fa-user-check text-xl ml-3"></i>
-                        <span>دخول المشرفين (برقم التليفون والـ PIN)</span>
+                        <span id="menuSupervisorLoginText">دخول المشرفين (برقم التليفون والـ PIN)</span>
                     </div>
                     <i class="fa-solid fa-angle-left text-purple-400"></i>
                 </div>
@@ -521,6 +521,7 @@
                     </div>
                     <span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">نشر فوري سحابي</span>
                 </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                     <button onclick="openAdminAddServiceModal()" class="p-4 bg-primary hover:opacity-95 text-slate-950 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/20">
                         <i class="fa-solid fa-user-plus text-2xl"></i>
@@ -965,12 +966,12 @@
     <div id="settingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-cardBg border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-base"><i class="fa-solid fa-gear text-primary ml-2"></i> الإعدادات</h3>
+                <h3 id="settingsModalTitle" class="font-bold text-base"><i class="fa-solid fa-gear text-primary ml-2"></i> الإعدادات</h3>
                 <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-4 text-slate-300">
                 <div>
-                    <label class="block font-semibold mb-2">المظهر</label>
+                    <label id="settingsThemeLabel" class="block font-semibold mb-2">المظهر</label>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="applyTheme('system')" id="themeSysBtn" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center hover:border-primary transition">حسب النظام</button>
                         <button onclick="applyTheme('dark')" id="themeDarkBtn" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl text-center font-bold transition">الوضع الليلي</button>
@@ -979,7 +980,7 @@
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-2">لون التطبيق الأساسي</label>
+                    <label id="settingsColorLabel" class="block font-semibold mb-2">لون التطبيق الأساسي</label>
                     <div class="flex space-x-2 space-x-reverse">
                         <button onclick="applyColor('#10B981')" class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white shadow"></button>
                         <button onclick="applyColor('#6366F1')" class="w-8 h-8 rounded-full bg-indigo-500 border-2 border-white shadow"></button>
@@ -990,14 +991,14 @@
                 </div>
 
                 <div>
-                    <label class="block font-semibold mb-2">اللغة / Language</label>
+                    <label id="settingsLangLabel" class="block font-semibold mb-2">اللغة / Language</label>
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="applyLanguage('ar')" id="langArBtn" class="p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition">العربية</button>
                         <button onclick="applyLanguage('en')" id="langEnBtn" class="p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center transition">English</button>
                     </div>
                 </div>
             </div>
-            <button onclick="closeSettingsModal()" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl mt-4">حفظ الإعدادات</button>
+            <button id="settingsSaveBtn" onclick="closeSettingsModal()" class="w-full py-2.5 bg-primary text-slate-950 font-bold rounded-xl mt-4">حفظ الإعدادات</button>
         </div>
     </div>
 
@@ -1171,7 +1172,65 @@
         let loggedInProviderSession = null;
         let lastSyncTimestamp = 0;
         const processedOpIds = new Set();
+        const remoteSeenItemIds = new Set();
+        const remoteSeenOfferIds = new Set();
+        const remoteSeenJobIds = new Set();
+        let remoteSeenCats = false;
+        let lastReseedTime = 0;
+        let deletedRecords = { items: [], offers: [], jobs: [], cats: [] };
         const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v8';
+
+        // دالة دمج ذكية تمنع ضياع أي إضافات عند تحديث الكود أو المزامنة بين الهواتف
+        function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
+            const map = new Map();
+            (existingArr || []).forEach(item => {
+                if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) {
+                    map.set(String(item.id), item);
+                }
+            });
+            (incomingArr || []).forEach(item => {
+                if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) {
+                    map.set(String(item.id), item);
+                }
+            });
+            return Array.from(map.values());
+        }
+
+        function mergeCategories(existingCats, incomingCats, deletedCatIds = []) {
+            const map = new Map();
+            (existingCats || []).forEach(c => {
+                if (c && c.id && !deletedCatIds.includes(String(c.id))) {
+                    map.set(String(c.id), JSON.parse(JSON.stringify(c)));
+                }
+            });
+            (incomingCats || []).forEach(c => {
+                if (c && c.id && !deletedCatIds.includes(String(c.id))) {
+                    if (map.has(String(c.id))) {
+                        const existingCat = map.get(String(c.id));
+                        existingCat.name = c.name || existingCat.name;
+                        existingCat.nameEn = c.nameEn || existingCat.nameEn;
+                        existingCat.subCategories = mergeArrayById(existingCat.subCategories || [], c.subCategories || []);
+                        map.set(String(c.id), existingCat);
+                    } else {
+                        map.set(String(c.id), JSON.parse(JSON.stringify(c)));
+                    }
+                }
+            });
+            return Array.from(map.values());
+        }
+
+        function mergeSupervisors(existingSups, incomingSups) {
+            const map = new Map();
+            (existingSups || []).forEach(s => {
+                const key = s.phone || s.email;
+                if (key) map.set(String(key).toLowerCase(), s);
+            });
+            (incomingSups || []).forEach(s => {
+                const key = s.phone || s.email;
+                if (key) map.set(String(key).toLowerCase(), s);
+            });
+            return Array.from(map.values());
+        }
 
         function saveLocalCache() {
             try {
@@ -1180,26 +1239,41 @@
                     items: dbItems,
                     offers: dbOffers,
                     jobs: dbJobs,
-                    sups: supervisors
+                    sups: supervisors,
+                    deleted: deletedRecords
                 }));
             } catch (e) {}
         }
 
+        // قراءة واسترجاع أي إضافات محفوظة في أي نسخة سابقة على الجهاز ودمجها فوراً
         function loadLocalCache() {
             try {
-                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed.cats && parsed.cats.length) dbCategories = parsed.cats;
-                    if (parsed.items && parsed.items.length) dbItems = parsed.items;
-                    if (parsed.offers) dbOffers = parsed.offers;
-                    if (parsed.jobs) dbJobs = parsed.jobs;
-                    if (parsed.sups && parsed.sups.length) supervisors = parsed.sups;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.toLowerCase().includes('derwa')) {
+                        try {
+                            const parsed = JSON.parse(localStorage.getItem(k));
+                            if (parsed) {
+                                if (parsed.deleted) {
+                                    deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(parsed.deleted.items || [])]));
+                                    deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(parsed.deleted.offers || [])]));
+                                    deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(parsed.deleted.jobs || [])]));
+                                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(parsed.deleted.cats || [])]));
+                                }
+                                if (parsed.cats && Array.isArray(parsed.cats)) dbCategories = mergeCategories(dbCategories, parsed.cats, deletedRecords.cats);
+                                if (parsed.items && Array.isArray(parsed.items)) dbItems = mergeArrayById(dbItems, parsed.items, deletedRecords.items);
+                                if (parsed.offers && Array.isArray(parsed.offers)) dbOffers = mergeArrayById(dbOffers, parsed.offers, deletedRecords.offers);
+                                if (parsed.jobs && Array.isArray(parsed.jobs)) dbJobs = mergeArrayById(dbJobs, parsed.jobs, deletedRecords.jobs);
+                                if (parsed.sups && Array.isArray(parsed.sups)) supervisors = mergeSupervisors(supervisors, parsed.sups);
+                            }
+                        } catch (innerE) {}
+                    }
                 }
+                saveLocalCache();
             } catch (e) {}
         }
 
-        // إعداد Firebase Firestore للربط السحابي المباشر
+        // إعداد Firebase Firestore للربط السحابي المباشر مع الدمج الذكي (بدون مسح إضافات السحابة الحية)
         let db = null;
         let auth = null;
         let currentUser = null;
@@ -1226,11 +1300,18 @@
                             onSnapshot(stateDocRef, (docSnap) => {
                                 if (docSnap.exists()) {
                                     const cloudData = docSnap.data();
-                                    if (cloudData.categoriesJson) dbCategories = JSON.parse(cloudData.categoriesJson);
-                                    if (cloudData.itemsJson) dbItems = JSON.parse(cloudData.itemsJson);
-                                    if (cloudData.offersJson) dbOffers = JSON.parse(cloudData.offersJson);
-                                    if (cloudData.jobsJson) dbJobs = JSON.parse(cloudData.jobsJson);
-                                    if (cloudData.supervisorsJson) supervisors = JSON.parse(cloudData.supervisorsJson);
+                                    if (cloudData.deletedJson) {
+                                        const rDel = JSON.parse(cloudData.deletedJson);
+                                        deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(rDel.items || [])]));
+                                        deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(rDel.offers || [])]));
+                                        deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(rDel.jobs || [])]));
+                                        deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(rDel.cats || [])]));
+                                    }
+                                    if (cloudData.categoriesJson) dbCategories = mergeCategories(dbCategories, JSON.parse(cloudData.categoriesJson), deletedRecords.cats);
+                                    if (cloudData.itemsJson) dbItems = mergeArrayById(dbItems, JSON.parse(cloudData.itemsJson), deletedRecords.items);
+                                    if (cloudData.offersJson) dbOffers = mergeArrayById(dbOffers, JSON.parse(cloudData.offersJson), deletedRecords.offers);
+                                    if (cloudData.jobsJson) dbJobs = mergeArrayById(dbJobs, JSON.parse(cloudData.jobsJson), deletedRecords.jobs);
+                                    if (cloudData.supervisorsJson) supervisors = mergeSupervisors(supervisors, JSON.parse(cloudData.supervisorsJson));
                                     saveLocalCache();
                                     refreshAllViews();
                                 }
@@ -1244,21 +1325,248 @@
                 console.warn("Firebase init fallback to Live Relay:", e);
             }
         }
+        // تطبيق التحديثات الجزئية أو الكلية القادمة عبر البث السحابي بين الهواتف مع الدمج الذكي
+        function applyRemoteOperation(opObj) {
+            if (!opObj || !opObj.op) return;
+            if (opObj.opId) {
+                if (processedOpIds.has(opObj.opId)) return;
+                processedOpIds.add(opObj.opId);
+            }
+
+            if (opObj.op === 'REQUEST_RESEED') {
+                // إذا طلب جهاز جديد البيانات، نقوم بضخ العناصر غير الموجودة على السيرفر تلقائياً
+                if (Date.now() - lastReseedTime > 30000) {
+                    reseedMissingDataToCloud(true);
+                }
+                return;
+            }
+
+            if (opObj.op === 'FULL_SYNC') {
+                if (opObj.deleted) {
+                    deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(opObj.deleted.items || [])]));
+                    deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(opObj.deleted.offers || [])]));
+                    deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(opObj.deleted.jobs || [])]));
+                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(opObj.deleted.cats || [])]));
+                }
+                if (opObj.cats) {
+                    remoteSeenCats = true;
+                    dbCategories = mergeCategories(dbCategories, opObj.cats, deletedRecords.cats);
+                }
+                if (opObj.items) {
+                    opObj.items.forEach(it => { if (it && it.id !== undefined) remoteSeenItemIds.add(String(it.id)); });
+                    dbItems = mergeArrayById(dbItems, opObj.items, deletedRecords.items);
+                }
+                if (opObj.offers) {
+                    opObj.offers.forEach(of => { if (of && of.id !== undefined) remoteSeenOfferIds.add(String(of.id)); });
+                    dbOffers = mergeArrayById(dbOffers, opObj.offers, deletedRecords.offers);
+                }
+                if (opObj.jobs) {
+                    opObj.jobs.forEach(jb => { if (jb && jb.id !== undefined) remoteSeenJobIds.add(String(jb.id)); });
+                    dbJobs = mergeArrayById(dbJobs, opObj.jobs, deletedRecords.jobs);
+                }
+                if (opObj.sups) supervisors = mergeSupervisors(supervisors, opObj.sups);
+            } else if (opObj.op === 'CATS_SYNC' && opObj.cats) {
+                remoteSeenCats = true;
+                if (opObj.deletedCats) {
+                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...opObj.deletedCats]));
+                }
+                dbCategories = mergeCategories(dbCategories, opObj.cats, deletedRecords.cats);
+            } else if (opObj.op === 'ITEM_UPSERT' && opObj.item) {
+                remoteSeenItemIds.add(String(opObj.item.id));
+                if (!deletedRecords.items.includes(String(opObj.item.id))) {
+                    const idx = dbItems.findIndex(x => String(x.id) === String(opObj.item.id));
+                    if (idx >= 0) dbItems[idx] = opObj.item;
+                    else dbItems.push(opObj.item);
+                }
+            } else if (opObj.op === 'ITEM_DELETE' && opObj.id !== undefined) {
+                deletedRecords.items.push(String(opObj.id));
+                dbItems = dbItems.filter(x => String(x.id) !== String(opObj.id));
+            } else if (opObj.op === 'OFFER_UPSERT' && opObj.offer) {
+                remoteSeenOfferIds.add(String(opObj.offer.id));
+                if (!deletedRecords.offers.includes(String(opObj.offer.id))) {
+                    const idx = dbOffers.findIndex(x => String(x.id) === String(opObj.offer.id));
+                    if (idx >= 0) dbOffers[idx] = opObj.offer;
+                    else dbOffers.push(opObj.offer);
+                }
+            } else if (opObj.op === 'OFFER_DELETE' && opObj.id !== undefined) {
+                deletedRecords.offers.push(String(opObj.id));
+                dbOffers = dbOffers.filter(x => String(x.id) !== String(opObj.id));
+            } else if (opObj.op === 'JOB_UPSERT' && opObj.job) {
+                remoteSeenJobIds.add(String(opObj.job.id));
+                if (!deletedRecords.jobs.includes(String(opObj.job.id))) {
+                    const idx = dbJobs.findIndex(x => String(x.id) === String(opObj.job.id));
+                    if (idx >= 0) dbJobs[idx] = opObj.job;
+                    else dbJobs.push(opObj.job);
+                }
+            } else if (opObj.op === 'JOB_DELETE' && opObj.id !== undefined) {
+                deletedRecords.jobs.push(String(opObj.id));
+                dbJobs = dbJobs.filter(x => String(x.id) !== String(opObj.id));
+            } else if (opObj.op === 'SUPS_SYNC' && opObj.sups) {
+                supervisors = mergeSupervisors(supervisors, opObj.sups);
+            }
+            saveLocalCache();
+            refreshAllViews();
+        }
+
+        // إعادة ضخ وتثبيت أي محلات أو بيانات محفوظة على الجهاز إذا انتهت مدة الـ 12 ساعة الخاصة بها على السحابة
+        async function reseedMissingDataToCloud(forceAll = false) {
+            lastReseedTime = Date.now();
+            try {
+                // رفع أي عناصر مسجلة على هذا الجهاز وغير موجودة في نافذة السحابة الحالية (أو كلها عند الطلب)
+                for (const item of dbItems) {
+                    const isDefault = [1, 2, 3].includes(Number(item.id));
+                    if (forceAll || (!isDefault && !remoteSeenItemIds.has(String(item.id)))) {
+                        remoteSeenItemIds.add(String(item.id));
+                        await syncWithCloud({ op: 'ITEM_UPSERT', item });
+                    }
+                }
+                for (const offer of dbOffers) {
+                    if (forceAll || !remoteSeenOfferIds.has(String(offer.id))) {
+                        remoteSeenOfferIds.add(String(offer.id));
+                        await syncWithCloud({ op: 'OFFER_UPSERT', offer });
+                    }
+                }
+                for (const job of dbJobs) {
+                    if (forceAll || !remoteSeenJobIds.has(String(job.id))) {
+                        remoteSeenJobIds.add(String(job.id));
+                        await syncWithCloud({ op: 'JOB_UPSERT', job });
+                    }
+                }
+                if (forceAll || (!remoteSeenCats && dbCategories.length > 8)) {
+                    remoteSeenCats = true;
+                    await syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories, deletedCats: deletedRecords.cats });
+                }
+                if (forceAll && supervisors.length > 2) {
+                    await syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
+                }
+            } catch (e) {}
+        }
+
+        async function forcePushAllLocalDataToCloud() {
+            await reseedMissingDataToCloud(true);
+            showAlert('تم التثبيت السحابي الشامل', 'تم ضخ وتثبيت كافة المحلات والأشخاص والعروض والبنود المسجلة على جهازك إلى السحابة لتظهر على جميع الهواتف فوراً.');
+        }
+
+        // إرسال أي تعديل فوراً إلى السحابة ليظهر على جميع الهواتف الأخرى
+        async function syncWithCloud(deltaPayload = null) {
+            const nowTs = Date.now();
+            const opId = nowTs + '_' + Math.random().toString(36).substring(2, 8);
+            processedOpIds.add(opId);
+            saveLocalCache();
+            refreshAllViews();
+
+            // 1. الحفظ في Firebase Firestore إذا كان متاحاً
+            if (db && currentUser) {
+                try {
+                    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
+                    await setDoc(stateDocRef, {
+                        updatedAt: nowTs,
+                        categoriesJson: JSON.stringify(dbCategories),
+                        itemsJson: JSON.stringify(dbItems),
+                        offersJson: JSON.stringify(dbOffers),
+                        jobsJson: JSON.stringify(dbJobs),
+                        supervisorsJson: JSON.stringify(supervisors),
+                        deletedJson: JSON.stringify(deletedRecords)
+                    });
+                } catch (e) {
+                    console.warn("Firestore write error:", e);
+                }
+            }
+
+            // 2. البث الفوري عبر خادم ntfy السحابي لربط جميع الهواتف وتطبيقات الأندرويد (APK) ببعضها
+            try {
+                let messageToSend = deltaPayload ? { ...deltaPayload, opId, ts: nowTs } : {
+                    op: 'FULL_SYNC',
+                    opId,
+                    ts: nowTs,
+                    cats: dbCategories,
+                    items: dbItems,
+                    offers: dbOffers,
+                    jobs: dbJobs,
+                    sups: supervisors,
+                    deleted: deletedRecords
+                };
+
+                let bodyStr = JSON.stringify(messageToSend);
+                if (bodyStr.length > 3800 && messageToSend.offer && messageToSend.offer.image) {
+                    const slimOffer = { ...messageToSend.offer, image: '' };
+                    bodyStr = JSON.stringify({ ...messageToSend, offer: slimOffer });
+                }
+
+                await fetch(LIVE_SYNC_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: bodyStr
+                });
+            } catch (e) {
+                console.warn("Live relay post error:", e);
+            }
+        }
+
+        async function pollCloudMessages(sinceParam = 'all') {
+            try {
+                const res = await fetch(`${LIVE_SYNC_URL}/json?poll=1&since=${sinceParam}`);
+                const text = await res.text();
+                const lines = text.trim().split('\n');
+                for (const line of lines) {
+                    if (!line) continue;
+                    try {
+                        const wrapper = JSON.parse(line);
+                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                            const opObj = JSON.parse(wrapper.message);
+                            applyRemoteOperation(opObj);
+                        }
+                    } catch (innerErr) {}
+                }
+            } catch (e) {}
+        }
+
+        // جلب السجل السحابي الكامل عند فتح التطبيق على أي هاتف والاشتراك في البث الحي + الفحص الدوري
+        async function connectLiveMultiDeviceCloud() {
+            await pollCloudMessages('all');
+
+            // سحب وضخ كافة الإضافات المحفوظة على ذاكرة هذا الهاتف للسحابة تلقائياً (لاستعادة أي إضافات أضفتها أنت مؤخراً)
+            await reseedMissingDataToCloud(true);
+
+            // إذا كان هذا الجهاز جديداً ولا يملك إلا البيانات الافتراضية، يطلب من الأجهزة المتصلة ضخ البيانات
+            if (dbItems.length <= 3) {
+                syncWithCloud({ op: 'REQUEST_RESEED' });
+            }
+
+            // فتح اتصال حي ومستمر (SSE) لاستقبال أي إضافة من هاتف آخر في نفس اللحظة
+            try {
+                const evtSource = new EventSource(`${LIVE_SYNC_URL}/sse`);
+                evtSource.onmessage = (event) => {
+                    try {
+                        const wrapper = JSON.parse(event.data);
+                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                            const opObj = JSON.parse(wrapper.message);
+                            applyRemoteOperation(opObj);
+                        }
+                    } catch (err) {}
+                };
+            } catch (e) {
+                console.warn("SSE connection error:", e);
+            }
+
+            // فحص دوري كل 8 ثوانٍ لضمان المزامنة 100% حتى داخل تطبيقات APK التي قد توقف SSE في الخلفية
+            setInterval(() => {
+                pollCloudMessages('20s');
+            }, 8000);
+        }
 
         function updatePendingBadge() {
+            const badge = document.getElementById('pendingApprovalsBadge');
+            if (!badge) return;
             const pendingCount =
                 dbItems.filter(i => i.status !== 'approved').length +
                 dbOffers.filter(o => o.status !== 'approved').length +
                 dbJobs.filter(j => j.status !== 'approved').length;
-
-            const badgeEl = document.getElementById('pendingApprovalsBadge');
-            if (badgeEl) {
-                if (pendingCount > 0) {
-                    badgeEl.innerText = pendingCount;
-                    badgeEl.classList.remove('hidden');
-                } else {
-                    badgeEl.classList.add('hidden');
-                }
+            if (pendingCount > 0) {
+                badge.innerText = pendingCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
         }
 
@@ -1288,140 +1596,10 @@
             }
             const badge = document.getElementById('activeCountBadge');
             if (badge) {
-                badge.innerText = `متصل بالسحابة الحية (${dbItems.filter(i => i.status === 'approved').length} خدمة)`;
-            }
-        }
-
-        // تطبيق التحديثات الجزئية أو الكلية القادمة عبر البث السحابي بين الهواتف دون تأثر باختلاف ساعات الهواتف
-        function applyRemoteOperation(opObj) {
-            if (!opObj || !opObj.op) return;
-            if (opObj.opId) {
-                if (processedOpIds.has(opObj.opId)) return;
-                processedOpIds.add(opObj.opId);
-            }
-
-            if (opObj.op === 'FULL_SYNC') {
-                if (opObj.cats) dbCategories = opObj.cats;
-                if (opObj.items) dbItems = opObj.items;
-                if (opObj.offers) dbOffers = opObj.offers;
-                if (opObj.jobs) dbJobs = opObj.jobs;
-                if (opObj.sups) supervisors = opObj.sups;
-            } else if (opObj.op === 'CATS_SYNC' && opObj.cats) {
-                dbCategories = opObj.cats;
-            } else if (opObj.op === 'ITEM_UPSERT' && opObj.item) {
-                const idx = dbItems.findIndex(x => Number(x.id) === Number(opObj.item.id));
-                if (idx >= 0) dbItems[idx] = opObj.item;
-                else dbItems.push(opObj.item);
-            } else if (opObj.op === 'ITEM_DELETE' && opObj.id !== undefined) {
-                dbItems = dbItems.filter(x => Number(x.id) !== Number(opObj.id));
-            } else if (opObj.op === 'OFFER_UPSERT' && opObj.offer) {
-                const idx = dbOffers.findIndex(x => Number(x.id) === Number(opObj.offer.id));
-                if (idx >= 0) dbOffers[idx] = opObj.offer;
-                else dbOffers.push(opObj.offer);
-            } else if (opObj.op === 'OFFER_DELETE' && opObj.id !== undefined) {
-                dbOffers = dbOffers.filter(x => Number(x.id) !== Number(opObj.id));
-            } else if (opObj.op === 'JOB_UPSERT' && opObj.job) {
-                const idx = dbJobs.findIndex(x => Number(x.id) === Number(opObj.job.id));
-                if (idx >= 0) dbJobs[idx] = opObj.job;
-                else dbJobs.push(opObj.job);
-            } else if (opObj.op === 'JOB_DELETE' && opObj.id !== undefined) {
-                dbJobs = dbJobs.filter(x => Number(x.id) !== Number(opObj.id));
-            } else if (opObj.op === 'SUPS_SYNC' && opObj.sups) {
-                supervisors = opObj.sups;
-            }
-            saveLocalCache();
-            refreshAllViews();
-        }
-
-        // إرسال أي تعديل فوراً إلى السحابة ليظهر على جميع الهواتف الأخرى
-        async function syncWithCloud(deltaPayload = null) {
-            const nowTs = Date.now();
-            const opId = nowTs + '_' + Math.random().toString(36).substring(2, 8);
-            processedOpIds.add(opId);
-            saveLocalCache();
-            refreshAllViews();
-
-            // 1. الحفظ في Firebase Firestore إذا كان متاحاً
-            if (db && currentUser) {
-                try {
-                    const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
-                    await setDoc(stateDocRef, {
-                        updatedAt: nowTs,
-                        categoriesJson: JSON.stringify(dbCategories),
-                        itemsJson: JSON.stringify(dbItems),
-                        offersJson: JSON.stringify(dbOffers),
-                        jobsJson: JSON.stringify(dbJobs),
-                        supervisorsJson: JSON.stringify(supervisors)
-                    });
-                } catch (e) {
-                    console.warn("Firestore write error:", e);
-                }
-            }
-
-            // 2. البث الفوري عبر خادم ntfy السحابي لربط جميع الهواتف وتطبيقات الأندرويد (APK) ببعضها
-            try {
-                let messageToSend = deltaPayload ? { ...deltaPayload, opId, ts: nowTs } : {
-                    op: 'FULL_SYNC',
-                    opId,
-                    ts: nowTs,
-                    cats: dbCategories,
-                    items: dbItems,
-                    offers: dbOffers,
-                    jobs: dbJobs,
-                    sups: supervisors
-                };
-
-                let bodyStr = JSON.stringify(messageToSend);
-                // ضمان عدم تجاوز حد 4000 حرف الخاص بـ ntfy.sh حتى لا يتم تحويل الرسالة إلى ملف مرفق
-                if (bodyStr.length > 3800 && messageToSend.offer && messageToSend.offer.image) {
-                    const slimOffer = { ...messageToSend.offer, image: '' };
-                    bodyStr = JSON.stringify({ ...messageToSend, offer: slimOffer });
-                }
-
-                await fetch(LIVE_SYNC_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                    body: bodyStr
-                });
-            } catch (e) {
-                console.warn("Live relay post error:", e);
-            }
-        }
-
-        // جلب السجل السحابي الكامل عند فتح التطبيق على أي هاتف والاشتراك في البث الحي
-        async function connectLiveMultiDeviceCloud() {
-            try {
-                const res = await fetch(`${LIVE_SYNC_URL}/json?poll=1&since=all`);
-                const text = await res.text();
-                const lines = text.trim().split('\n');
-                for (const line of lines) {
-                    if (!line) continue;
-                    try {
-                        const wrapper = JSON.parse(line);
-                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                            const opObj = JSON.parse(wrapper.message);
-                            applyRemoteOperation(opObj);
-                        }
-                    } catch (innerErr) {}
-                }
-            } catch (e) {
-                console.warn("Initial cloud history fetch error:", e);
-            }
-
-            // فتح اتصال حي ومستمر (SSE) لاستقبال أي إضافة من هاتف آخر في نفس اللحظة
-            try {
-                const evtSource = new EventSource(`${LIVE_SYNC_URL}/sse`);
-                evtSource.onmessage = (event) => {
-                    try {
-                        const wrapper = JSON.parse(event.data);
-                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                            const opObj = JSON.parse(wrapper.message);
-                            applyRemoteOperation(opObj);
-                        }
-                    } catch (err) {}
-                };
-            } catch (e) {
-                console.warn("SSE connection error:", e);
+                const count = dbItems.filter(i => i.status === 'approved').length;
+                badge.innerText = currentLang === 'en'
+                    ? `Connected to Live Cloud (${count} services)`
+                    : `متصل بالسحابة الحية (${count} خدمة)`;
             }
         }
 
@@ -1529,17 +1707,22 @@
             const container = document.getElementById('offersContainer');
             const approvedOffers = dbOffers.filter(o => o.status === 'approved');
             if (approvedOffers.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-tags"></i></div><h4 class="font-bold text-base">لا توجد عروض حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف عرضك مع صورة المنتج من هاتفك ووصفه وسيظهر هنا بعد موافقة الإدارة.</p><button onclick="openAddOfferModal()" class="px-5 py-2.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-primary/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف عرضك الآن</button></div>`;
+                const emptyTitle = currentLang === 'en' ? 'No Active Offers Currently' : 'لا توجد عروض حالياً';
+                const emptyDesc = currentLang === 'en' ? 'Add your store offer with a product photo and description; it will appear here after admin approval.' : 'أضف عرضك مع صورة المنتج من هاتفك ووصفه وسيظهر هنا بعد موافقة الإدارة.';
+                const emptyBtn = currentLang === 'en' ? 'Add Your Offer Now' : 'أضف عرضك الآن';
+                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-tags"></i></div><h4 class="font-bold text-base">${emptyTitle}</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">${emptyDesc}</p><button onclick="openAddOfferModal()" class="px-5 py-2.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-primary/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> ${emptyBtn}</button></div>`;
                 return;
             }
+            const badgeTxt = currentLang === 'en' ? 'Verified Offer' : 'عرض معتمد';
+            const waTxt = currentLang === 'en' ? 'WhatsApp' : 'واتساب العرض';
             container.innerHTML = approvedOffers.map(offer => `
                 <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
                     <div class="space-y-3">
                         ${offer.image ? `<div class="w-full h-48 rounded-2xl overflow-hidden bg-slate-950"><img src="${offer.image}" alt="Offer Image" class="w-full h-full object-cover"></div>` : ''}
-                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-primary">${offer.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${offer.store}</p></div><span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">عرض معتمد</span></div>
+                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-primary">${offer.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${offer.store}</p></div><span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">${badgeTxt}</span></div>
                         <p class="text-xs text-slate-300 leading-relaxed">${offer.description}</p>
                     </div>
-                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${offer.phone}" class="font-mono text-slate-300 hover:text-primary"><i class="fa-solid fa-phone text-primary ml-1"></i> ${offer.phone}</a><a href="https://wa.me/${offer.phone}" target="_blank" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب العرض</a></div>
+                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${offer.phone}" class="font-mono text-slate-300 hover:text-primary"><i class="fa-solid fa-phone text-primary ml-1"></i> ${offer.phone}</a><a href="https://wa.me/${offer.phone}" target="_blank" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> ${waTxt}</a></div>
                 </div>
             `).join('');
         }
@@ -1548,16 +1731,21 @@
             const container = document.getElementById('jobsContainer');
             const approvedJobs = dbJobs.filter(j => j.status === 'approved');
             if (approvedJobs.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-briefcase"></i></div><h4 class="font-bold text-base">لا توجد وظائف معروضة حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف إعلان وظيفة ليعرض على أهالي القرية بعد موافقة الإدارة.</p><button onclick="openAddJobModal()" class="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف إعلان وظيفة</button></div>`;
+                const emptyTitle = currentLang === 'en' ? 'No Jobs Listed Currently' : 'لا توجد وظائف معروضة حالياً';
+                const emptyDesc = currentLang === 'en' ? 'Post a job announcement for Derwa village residents; it will be displayed after admin approval.' : 'أضف إعلان وظيفة ليعرض على أهالي القرية بعد موافقة الإدارة.';
+                const emptyBtn = currentLang === 'en' ? 'Post a Job Announcement' : 'أضف إعلان وظيفة';
+                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-briefcase"></i></div><h4 class="font-bold text-base">${emptyTitle}</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">${emptyDesc}</p><button onclick="openAddJobModal()" class="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> ${emptyBtn}</button></div>`;
                 return;
             }
+            const badgeTxt = currentLang === 'en' ? 'Verified Job' : 'وظيفة معتمدة';
+            const waTxt = currentLang === 'en' ? 'Contact via WhatsApp' : 'تواصل للوظيفة';
             container.innerHTML = approvedJobs.map(job => `
                 <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
                     <div class="space-y-3">
-                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-amber-400">${job.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${job.store}</p></div><span class="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-bold">وظيفة معتمدة</span></div>
+                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-amber-400">${job.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${job.store}</p></div><span class="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-bold">${badgeTxt}</span></div>
                         <p class="text-xs text-slate-300 leading-relaxed">${job.description}</p>
                     </div>
-                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${job.phone}" class="font-mono text-slate-300 hover:text-amber-400"><i class="fa-solid fa-phone text-amber-400 ml-1"></i> ${job.phone}</a><a href="https://wa.me/${job.phone}" target="_blank" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> تواصل للوظيفة</a></div>
+                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${job.phone}" class="font-mono text-slate-300 hover:text-amber-400"><i class="fa-solid fa-phone text-amber-400 ml-1"></i> ${job.phone}</a><a href="https://wa.me/${job.phone}" target="_blank" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> ${waTxt}</a></div>
                 </div>
             `).join('');
         }
@@ -1813,14 +2001,14 @@
             const mainId = document.getElementById('joinMainCat').value;
             const subSelect = document.getElementById('joinSubCat');
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat && subSelect) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            if (cat && subSelect) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${currentLang === 'en' ? (s.nameEn || s.name) : s.name}</option>`).join('');
         }
 
         function initJoinForm() {
             const mainSelect = document.getElementById('joinMainCat');
             if (mainSelect) {
                 const prevVal = mainSelect.value;
-                mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${currentLang === 'en' ? (c.nameEn || c.name) : c.name}</option>`).join('');
                 if (prevVal && dbCategories.some(c => c.id === prevVal)) mainSelect.value = prevVal;
                 populateJoinSubCats();
             }
@@ -2436,13 +2624,16 @@
 
         function deleteSubmission(table, id) {
             if (table === 'directory') {
-                dbItems = dbItems.filter(x => x.id !== id);
+                deletedRecords.items.push(String(id));
+                dbItems = dbItems.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'ITEM_DELETE', id });
             } else if (table === 'offer') {
-                dbOffers = dbOffers.filter(x => x.id !== id);
+                deletedRecords.offers.push(String(id));
+                dbOffers = dbOffers.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'OFFER_DELETE', id });
             } else if (table === 'job') {
-                dbJobs = dbJobs.filter(x => x.id !== id);
+                deletedRecords.jobs.push(String(id));
+                dbJobs = dbJobs.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'JOB_DELETE', id });
             }
             renderAdminApprovalTable();
@@ -2506,8 +2697,12 @@
         }
 
         function deleteMainCategory(catIdx) {
+            const removed = dbCategories[catIdx];
+            if (removed && removed.id) {
+                deletedRecords.cats.push(String(removed.id));
+            }
             dbCategories.splice(catIdx, 1);
-            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories, deletedCats: deletedRecords.cats });
             showAlert('تم الحذف', 'تم حذف القسم الرئيسي وجميع بنوده الفرعية سحابياً.');
         }
 
@@ -2518,16 +2713,131 @@
         }
 
         function applyTheme(mode) {
-            if (mode === 'light') document.body.classList.add('light-mode');
-            else document.body.classList.remove('light-mode');
-            showAlert('المظهر', 'تم تطبيق المظهر بنجاح.');
+            const sysBtn = document.getElementById('themeSysBtn');
+            const darkBtn = document.getElementById('themeDarkBtn');
+            const lightBtn = document.getElementById('themeLightBtn');
+            [sysBtn, darkBtn, lightBtn].forEach(b => {
+                if (b) b.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center hover:border-primary transition";
+            });
+            if (mode === 'light') {
+                document.body.classList.add('light-mode');
+                if (lightBtn) lightBtn.className = "p-2.5 bg-slate-950 border border-primary text-primary rounded-xl text-center font-bold transition";
+            } else {
+                document.body.classList.remove('light-mode');
+                const activeBtn = mode === 'system' ? sysBtn : darkBtn;
+                if (activeBtn) activeBtn.className = "p-2.5 bg-slate-950 border border-primary text-primary rounded-xl text-center font-bold transition";
+            }
+            showAlert(currentLang === 'en' ? 'Theme Updated' : 'المظهر', currentLang === 'en' ? 'Theme has been applied successfully.' : 'تم تطبيق المظهر بنجاح.');
         }
-        function applyColor(hex) { document.documentElement.style.setProperty('--primary-color', hex); showAlert('اللون', 'تم تغيير اللون الأساسي.'); }
+        function applyColor(hex) {
+            document.documentElement.style.setProperty('--primary-color', hex);
+            showAlert(currentLang === 'en' ? 'Color Updated' : 'اللون', currentLang === 'en' ? 'Primary app color changed successfully.' : 'تم تغيير اللون الأساسي.');
+        }
         function applyLanguage(lang) {
             currentLang = lang;
-            document.documentElement.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
-            showAlert('اللغة', lang === 'en' ? 'Switched to English.' : 'تم التحويل للعربية.');
+            const isEn = lang === 'en';
+            document.documentElement.setAttribute('dir', isEn ? 'ltr' : 'rtl');
+            document.documentElement.setAttribute('lang', isEn ? 'en' : 'ar');
+
+            // تحديث شكل أزرار اللغة في نافذة الإعدادات
+            const arBtn = document.getElementById('langArBtn');
+            const enBtn = document.getElementById('langEnBtn');
+            if (arBtn && enBtn) {
+                if (isEn) {
+                    enBtn.className = "p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition";
+                    arBtn.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center transition";
+                } else {
+                    arBtn.className = "p-2.5 bg-slate-950 border border-primary text-primary rounded-xl font-bold transition";
+                    enBtn.className = "p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-center transition";
+                }
+            }
+
+            const translations = {
+                appHeaderTitle: isEn ? 'Derwa Smart Village Directory - Mallawi' : 'الدليل الذكى لقرية دروة مركز ملوى',
+                heroLocationText: isEn ? 'Derwa Village — Mallawi — Minya' : 'قرية دروة — مركز ملوي — المنيا',
+                heroTitle: isEn ? 'Derwa in Your Pocket' : 'دروة في جيبك',
+                heroSubtitle: isEn ? 'Derwa Smart Village Directory - Mallawi' : 'الدليل الذكى لقرية دروة مركز ملوى',
+                activeCountBadge: isEn ? `Connected to Live Cloud (${dbItems.filter(i => i.status === 'approved').length} services)` : `متصل بالسحابة الحية (${dbItems.filter(i => i.status === 'approved').length} خدمة)`,
+                heroDescText: isEn ? 'Derwa Smart Village Directory is the comprehensive digital guide for Derwa village in Mallawi, designed to connect residents with doctors, pharmacies, shops, and transportation with real-time cloud sync and star ratings.' : 'تطبيق (الدليل الذكى لقرية دروة مركز ملوى) هو الدليل الرقمي الشامل لقرية دروة بمركز ملوي، والمصمم خصيصاً لتحويلها إلى قرية ذكية. يدعم التخزين السحابي الفوري والتقييمات الفورية بالنجوم.',
+                statLabelOffers: isEn ? 'Active Offers' : 'عرض ساري',
+                statLabelCats: isEn ? 'Categories' : 'قسم',
+                statLabelServices: isEn ? 'Registered Services' : 'خدمة مسجلة',
+                bannerAdminMsgTitle: isEn ? 'Admin Announcements' : 'رسائل الإدارة',
+                bannerAdminMsgDesc: isEn ? 'View latest village announcements and updates' : 'لا توجد رسائل من الإدارة حالياً',
+                viewAllText1: isEn ? 'View All' : 'عرض الكل',
+                bannerOffersTitle: isEn ? 'Village Store Offers' : 'عروض داخل القرية',
+                bannerOffersDesc: isEn ? 'Browse verified local shop discounts & offers' : 'لا توجد عروض منشورة حالياً',
+                viewAllText2: isEn ? 'View All' : 'عرض الكل',
+                bannerJobsTitle: isEn ? 'Village Job Opportunities' : 'وظائف داخل القرية',
+                bannerJobsDesc: isEn ? 'Available local jobs for Derwa residents' : 'لا توجد وظائف منشورة حالياً',
+                viewAllText3: isEn ? 'View All' : 'عرض الكل',
+                directoryTitle: isEn ? 'Directory Categories' : 'أقسام الدليل',
+                directorySubtitle: isEn ? 'Browse by category & service' : 'تصفح حسب التصنيف والبنود',
+                bannerJoinTitle: isEn ? 'Add Yourself to the Directory' : 'أضف نفسك للدليل',
+                bannerJoinDesc: isEn ? 'Register your name, profession, and phone number (Subject to admin review)' : 'سجل اسمك ومهنتك ورقم هاتفك ليصل أهالي القرية إليك (يخضع لمراجعة الإدارة)',
+                bannerJobsMainTitle: isEn ? 'Village Job Opportunities' : 'فرص العمل بالقرية',
+                bannerJobsMainDesc: isEn ? 'Jobs in local shops and businesses for Derwa youth' : 'وظائف المحلات والمصالح لأبناء دروة',
+                bannerContactTitle: isEn ? 'Contact Administration' : 'تواصل مع الإدارة',
+                bannerContactDesc: isEn ? 'Inquiries, suggestions, or data correction' : 'استفسار، اقتراح، أو تصحيح بيانات',
+                appVersionBadge: isEn ? 'Derwa Smart Village v3.2 (Code 10 - Verified Cloud)' : 'الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 10 - سحابي معتمد وآمن)',
+                offersHeaderTitle: isEn ? 'Village Store Offers' : 'عروض داخل القرية',
+                offersHeaderSub: isEn ? 'Commercial store offers with photos, verified by Admin' : 'عروض المحلات التجارية مع الصور، معتمدة من الإدارة',
+                addOfferBtnText: isEn ? 'Add Offer (With Photo)' : 'أضف عرضك (مع صورة)',
+                jobsHeaderTitle: isEn ? 'Job Opportunities in Derwa' : 'فرص العمل بالقرية',
+                jobsHeaderSub: isEn ? 'Local jobs and vacancies inside Derwa village' : 'وظائف المحلات والمصالح داخل دروة مرتبة رأسياً',
+                addJobBtnText: isEn ? 'Add Job' : 'أضف وظيفة',
+                joinHeaderTitle: isEn ? 'Join the Directory / Suggest Service' : 'اقتراح إضافة / انضم إلى الدليل',
+                joinHeaderSub: isEn ? 'Submit your details (Name, Category, Address, Phone). Reviewed before publishing.' : 'سجل بياناتك (الاسم، القسم الرئيسي، الفرعي، العنوان التفصيلي، الهاتف). تخضع للمراجعة قبل الظهور العام.',
+                labelJoinName: isEn ? 'Name or Clinic / Shop Name *' : 'الاسم أو اسم المحل / العيادة *',
+                labelJoinMainCat: isEn ? 'Main Category *' : 'القسم الرئيسي *',
+                labelJoinSubCat: isEn ? 'Sub-Category *' : 'القسم الفرعي *',
+                labelJoinPhone: isEn ? 'Phone Number *' : 'رقم الهاتف *',
+                labelJoinWhatsapp: isEn ? 'WhatsApp Number (Optional)' : 'رقم واتساب (اختياري)',
+                labelJoinAddress: isEn ? 'Detailed Address / Route *' : 'العنوان التفصيلي / رقم العيادة أو المعمل / خط السير *',
+                submitJoinBtnText: isEn ? 'Submit Request for Cloud Admin Approval' : 'إرسال الطلب للإدارة للمراجعة والاعتماد سحابياً',
+                moreHeaderTitle: isEn ? 'More & Settings' : 'المزيد',
+                moreHeaderSub: isEn ? 'Derwa Smart Village Directory - Mallawi' : 'الدليل الذكى لقرية دروة مركز ملوى',
+                bannerVillageInfo: isEn ? 'Derwa Village — Mallawi — Minya' : 'قرية دروة — مركز ملوي — المنيا',
+                menuNotifText: isEn ? 'Admin Announcements' : 'رسائل الإدارة',
+                menuSettingsText: isEn ? 'Settings' : 'الإعدادات',
+                menuDeveloperText: isEn ? 'App Developer' : 'صانع التطبيق',
+                menuAboutText: isEn ? 'About the App' : 'عن التطبيق',
+                menuPrivacyText: isEn ? 'Privacy Policy' : 'سياسة الخصوصية',
+                menuContactText: isEn ? 'Contact Administration' : 'تواصل مع الإدارة',
+                menuShareText: isEn ? 'Share App' : 'مشاركة التطبيق',
+                menuProviderDashText: isEn ? 'Doctors & Drivers Dashboard (Manage Bookings)' : 'لوحة تحكم الأطباء والسائقين (إدارة الحجوزات)',
+                menuAdminLoginText: isEn ? 'Standalone Admin Services Login' : 'دخول صفحة خدمات المسؤول المستقلة',
+                menuSupervisorLoginText: isEn ? 'Supervisors Login (Phone & PIN)' : 'دخول المشرفين (برقم التليفون والـ PIN)',
+                navText_home: isEn ? 'Home' : 'الرئيسية',
+                navText_offers: isEn ? 'Offers' : 'العروض',
+                navText_jobs: isEn ? 'Jobs' : 'الوظائف',
+                navText_join: isEn ? 'Join Us' : 'انضم إلينا',
+                navText_more: isEn ? 'More' : 'المزيد',
+                settingsModalTitle: isEn ? 'Settings' : 'الإعدادات',
+                settingsThemeLabel: isEn ? 'Appearance / Theme' : 'المظهر',
+                themeSysBtn: isEn ? 'System Default' : 'حسب النظام',
+                themeDarkBtn: isEn ? 'Dark Mode' : 'الوضع الليلي',
+                themeLightBtn: isEn ? 'Light Mode' : 'الوضع النهاري',
+                settingsColorLabel: isEn ? 'Primary App Color' : 'لون التطبيق الأساسي',
+                settingsLangLabel: isEn ? 'Language / اللغة' : 'اللغة / Language',
+                settingsSaveBtn: isEn ? 'Save Settings' : 'حفظ الإعدادات'
+            };
+
+            Object.keys(translations).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerText = translations[id];
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.placeholder = isEn ? 'Search for doctor, pharmacy, microbus...' : 'ابحث عن طبيب، صيدلية، ميكروباص...';
+            }
+
             renderHomeCategories();
+            initJoinForm();
+            renderOffers();
+            renderJobs();
+            showAlert(isEn ? 'Language Changed' : 'اللغة', isEn ? 'Application language switched to English successfully.' : 'تم تحويل لغة التطبيق إلى العربية بنجاح.');
         }
 
         function openDeveloperModal() { document.getElementById('developerModal').classList.remove('hidden'); }
@@ -2536,10 +2846,12 @@
         function closeAboutModal() { document.getElementById('aboutModal').classList.add('hidden'); }
         function openPrivacyModal() {
             document.getElementById('privacyNodesList').innerHTML = `
-                <h2 class="font-bold text-sm text-white">1. مقدمة</h2>
-                <p>يُعد تطبيق (الدليل الذكى لقرية دروة مركز ملوى) دليلاً خدمياً محلياً ومجانياً ومخصصاً لخدمة أهالي قرية دروة بمركز ملوي ومساعدتهم في الوصول إلى الخدمات والأطباء ومواقف المواصلات بكل سهولة.</p>
-                <h2 class="font-bold text-sm text-white">2. جمع البيانات والسحابة</h2>
-                <p>يتم مزامنة البيانات عبر السحابة الفورية لضمان دقة ووصول التحديثات لجميع أهالي القرية فورياً على كافة الهواتف، مع حماية خصوصية الحجوزات وإزالتها تلقائياً.</p>
+                <h2 class="font-bold text-sm text-white">1. مقدمة / Introduction</h2>
+                <p>يُعد تطبيق (الدليل الذكى لقرية دروة مركز ملوى - Derwa Smart Village) دليلاً خدمياً محلياً ومجانياً مخصصاً لخدمة أهالي قرية دروة بمركز ملوي.</p>
+                <h2 class="font-bold text-sm text-white">2. البيانات التي يتم جمعها والغرض منها / Personal Data Collected & Purpose</h2>
+                <p>لا يجمع التطبيق أي بيانات شخصية تلقائياً. يتم جمع (الاسم ورقم الهاتف - Name & Phone Number) فقط عندما يقوم المستخدم بإدخالها طواعيةً في نموذج "انضم إلينا" لإدراج خدمته في الدليل العام، أو عند حجز موعد عيادة أو مقعد مواصلات، وذلك لغرض تشغيل وظائف التطبيق الأساسية (App Functionality).</p>
+                <h2 class="font-bold text-sm text-white">3. التخزين والأمان وحقوق المستخدم / Data Storage & User Rights</h2>
+                <p>تُحفظ البيانات عبر السحابة المؤمنة، وتُحذف بيانات الحجوزات اليومية تلقائياً بعد انتهاء الموعد، كما يحق لأي مستخدم طلب تعديل أو حذف بياناته فوراً من خلال قسم "تواصل مع الإدارة" أو عبر البريد: elderwi.arabcont@gmail.com.</p>
             `;
             document.getElementById('privacyModal').classList.remove('hidden');
         }
