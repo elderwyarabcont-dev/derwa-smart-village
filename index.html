@@ -1085,12 +1085,7 @@
                 name: 'الأطباء والعيادات',
                 nameEn: 'Doctors & Clinics',
                 icon: 'fa-solid fa-user-doctor',
-                subCategories: [
-                    { id: 'dr_omar', name: 'عيادة د. عمر عبدالقادر', nameEn: 'Dr. Omar Abdelkader Clinic' },
-                    { id: 'clinics', name: 'العيادات التخصصية الأخرى', nameEn: 'Other Medical Clinics' },
-                    { id: 'pharmacies', name: 'الصيدليات', nameEn: 'Pharmacies' },
-                    { id: 'labs', name: 'معامل التحاليل', nameEn: 'Labs & Radiology' }
-                ]
+                subCategories: []
             },
             {
                 id: 'medicines',
@@ -1160,7 +1155,7 @@
         ];
 
         let defaultItems = [
-            { id: 1, type: 'directory', mainCatId: 'health', subCatId: 'dr_omar', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [], ratings: [5, 4, 5] },
+            { id: 1, type: 'directory', mainCatId: 'health', subCatId: 'direct', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [], ratings: [5, 4, 5] },
             { id: 2, type: 'directory', mainCatId: 'medicines', subCatId: 'all_pharma', name: 'صيدلية د. مصطفى دروة', phone: '01012345678', whatsapp: '201012345678', address: 'شارع المركز الرئيسي - دروة', status: 'approved', ratings: [5, 5] },
             { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [], ratings: [4, 5, 4] }
         ];
@@ -1207,7 +1202,9 @@
             const map = new Map();
             (existingCats || []).forEach(c => {
                 if (c && c.id && !deletedCatIds.includes(String(c.id))) {
-                    map.set(String(c.id), JSON.parse(JSON.stringify(c)));
+                    const copy = JSON.parse(JSON.stringify(c));
+                    if (String(copy.id) === 'health') copy.subCategories = [];
+                    map.set(String(c.id), copy);
                 }
             });
             (incomingCats || []).forEach(c => {
@@ -1216,10 +1213,12 @@
                         const existingCat = map.get(String(c.id));
                         existingCat.name = c.name || existingCat.name;
                         existingCat.nameEn = c.nameEn || existingCat.nameEn;
-                        existingCat.subCategories = mergeArrayById(existingCat.subCategories || [], c.subCategories || []);
+                        existingCat.subCategories = String(c.id) === 'health' ? [] : mergeArrayById(existingCat.subCategories || [], c.subCategories || []);
                         map.set(String(c.id), existingCat);
                     } else {
-                        map.set(String(c.id), JSON.parse(JSON.stringify(c)));
+                        const copy = JSON.parse(JSON.stringify(c));
+                        if (String(copy.id) === 'health') copy.subCategories = [];
+                        map.set(String(c.id), copy);
                     }
                 }
             });
@@ -1594,7 +1593,7 @@
             const now = new Date();
             let changed = false;
             dbItems.forEach(item => {
-                if (item.isDoctorClinic && item.bookings && item.bookings.length > 0) {
+                if ((item.isDoctorClinic || item.mainCatId === 'health') && item.bookings && item.bookings.length > 0) {
                     const beforeLen = item.bookings.length;
                     item.bookings = item.bookings.filter(b => {
                         const bookingDate = new Date(b.date + 'T23:59:59');
@@ -1744,22 +1743,17 @@
             const container = document.getElementById('categoryDetailContent');
 
             let html = '';
-            cat.subCategories.forEach(sub => {
-                const subItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.subCatId === sub.id && i.status === 'approved');
-                const subName = currentLang === 'en' ? sub.nameEn : sub.name;
-                
-                html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3"><h4 class="font-bold text-sm text-primary flex items-center justify-between border-b border-slate-800 pb-2"><span><i class="fa-solid fa-folder-open ml-2"></i> ${subName}</span>${currentLoggedInAdmin ? `<button onclick="openAdminAddItemToSub('${cat.id}', '${sub.id}')" class="px-2 py-1 bg-primary/20 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-plus ml-1"></i> إضافة جهة</button>` : ''}</h4>`;
-
-                if (subItems.length === 0) {
-                    html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد جهات مسجلة تحت هذا البند حالياً</p>`;
+            if (cat.id === 'health' || !cat.subCategories || cat.subCategories.length === 0) {
+                const directItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.status === 'approved');
+                html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3">`;
+                if (currentLoggedInAdmin) {
+                    html += `<div class="flex justify-end border-b border-slate-800 pb-2"><button onclick="openAdminAddItemToSub('${cat.id}', 'direct')" class="px-2.5 py-1 bg-primary/20 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-plus ml-1"></i> إضافة جهة</button></div>`;
+                }
+                if (directItems.length === 0) {
+                    html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد جهات مسجلة تحت هذا القسم حالياً</p>`;
                 } else {
                     html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
-                    subItems.forEach(item => {
-                        const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
-                        const max = item.maxSeats || 14;
-                        const remaining = max - booked;
-                        const tripDir = item.currentTripDirection || 'النقلة الحالية متاحة';
-                        
+                    directItems.forEach(item => {
                         const ratings = item.ratings || [];
                         const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'جديد';
                         const starsHtml = ratings.length > 0 ? '★'.repeat(Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) + '☆'.repeat(5 - Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) : '☆☆☆☆☆';
@@ -1784,8 +1778,7 @@
                                     <button onclick="rateService(${item.id}, 4)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
                                     <button onclick="rateService(${item.id}, 5)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
                                 </div>
-                                ${['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(sub.id) ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز مقعد</button></div></div>` : ''}
-                                ${item.isDoctorClinic ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">حجوزات العيادة:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مريض مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
+                                ${(item.isDoctorClinic || item.mainCatId === 'health') ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">حجوزات العيادة:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مريض مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
                                 <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${item.whatsapp ? `<a href="https://wa.me/${item.whatsapp}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
                             </div>
                         `;
@@ -1793,7 +1786,58 @@
                     html += `</div>`;
                 }
                 html += `</div>`;
-            });
+            } else {
+                cat.subCategories.forEach(sub => {
+                    const subItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.subCatId === sub.id && i.status === 'approved');
+                    const subName = currentLang === 'en' ? sub.nameEn : sub.name;
+                    
+                    html += `<div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-3"><h4 class="font-bold text-sm text-primary flex items-center justify-between border-b border-slate-800 pb-2"><span><i class="fa-solid fa-folder-open ml-2"></i> ${subName}</span>${currentLoggedInAdmin ? `<button onclick="openAdminAddItemToSub('${cat.id}', '${sub.id}')" class="px-2 py-1 bg-primary/20 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-plus ml-1"></i> إضافة جهة</button>` : ''}</h4>`;
+
+                    if (subItems.length === 0) {
+                        html += `<p class="text-xs text-slate-500 py-2 text-center">لا توجد جهات مسجلة تحت هذا البند حالياً</p>`;
+                    } else {
+                        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
+                        subItems.forEach(item => {
+                            const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
+                            const max = item.maxSeats || 14;
+                            const remaining = max - booked;
+                            const tripDir = item.currentTripDirection || 'النقلة الحالية متاحة';
+                            
+                            const ratings = item.ratings || [];
+                            const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 'جديد';
+                            const starsHtml = ratings.length > 0 ? '★'.repeat(Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) + '☆'.repeat(5 - Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) : '☆☆☆☆☆';
+
+                            html += `
+                                <div class="bg-cardBg border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h5 class="font-bold text-sm">${item.name}</h5>
+                                            <div class="flex items-center space-x-1.5 space-x-reverse mt-1 text-[11px]">
+                                                <span class="text-amber-400 font-bold">${starsHtml}</span>
+                                                <span class="text-slate-400 font-mono">(${avgRating} / ${ratings.length} تقييم)</span>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] text-slate-300 font-medium bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800"><i class="fa-solid fa-location-dot text-primary ml-1"></i>${item.address}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-1 space-x-reverse pt-1 pb-1">
+                                        <span class="text-[10px] text-slate-400">قيم الخدمة:</span>
+                                        <button onclick="rateService(${item.id}, 1)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
+                                        <button onclick="rateService(${item.id}, 2)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
+                                        <button onclick="rateService(${item.id}, 3)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
+                                        <button onclick="rateService(${item.id}, 4)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
+                                        <button onclick="rateService(${item.id}, 5)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
+                                    </div>
+                                    ${['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(sub.id) ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز مقعد</button></div></div>` : ''}
+                                    ${(item.isDoctorClinic || item.mainCatId === 'health') ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">حجوزات العيادة:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مريض مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
+                                    <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${item.whatsapp ? `<a href="https://wa.me/${item.whatsapp}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                    html += `</div>`;
+                });
+            }
             container.innerHTML = html;
             document.getElementById('categoryDetailModal').classList.remove('hidden');
         }
@@ -1986,8 +2030,17 @@
         function populateJoinSubCats() {
             const mainId = document.getElementById('joinMainCat').value;
             const subSelect = document.getElementById('joinSubCat');
+            const subWrapper = subSelect ? subSelect.parentElement : null;
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat && subSelect) subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${currentLang === 'en' ? (s.nameEn || s.name) : s.name}</option>`).join('');
+            if (cat && subSelect) {
+                if (cat.id === 'health' || !cat.subCategories || cat.subCategories.length === 0) {
+                    subSelect.innerHTML = `<option value="direct">${currentLang === 'en' ? 'Direct' : 'مباشر'}</option>`;
+                    if (subWrapper) subWrapper.classList.add('hidden');
+                } else {
+                    if (subWrapper) subWrapper.classList.remove('hidden');
+                    subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${currentLang === 'en' ? (s.nameEn || s.name) : s.name}</option>`).join('');
+                }
+            }
         }
 
         function initJoinForm() {
@@ -2010,7 +2063,7 @@
             const address = document.getElementById('joinAddress').value.trim();
 
             const newId = Date.now();
-            const isDoc = mainCatId === 'health' && (subCatId === 'dr_omar' || subCatId === 'clinics');
+            const isDoc = mainCatId === 'health';
 
             const newItem = { id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: 'pending', isDoctorClinic: isDoc, bookings: [], ratings: [], pinCode: isDoc ? '5678' : '1234' };
             dbItems.push(newItem);
@@ -2269,7 +2322,7 @@
             const enteredPin = document.getElementById('providerGlobalPinInput').value.trim();
             if (!enteredPin) { showAlert('خطأ', 'أدخل الكود السري أولاً.', false); return; }
 
-            const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === (i.isDoctorClinic ? '5678' : '1234'))));
+            const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === ((i.isDoctorClinic || i.mainCatId === 'health') ? '5678' : '1234'))));
 
             if (!matchedProvider) {
                 showAlert('خطأ', 'الكود السري غير صحيح أو غير مخصص لمزيد من الخدمات.', false);
@@ -2287,7 +2340,7 @@
             const item = dbItems.find(i => i.id === itemId);
             if (!item) return;
 
-            const correctPin = item.pinCode || (item.isDoctorClinic ? '5678' : '1234');
+            const correctPin = item.pinCode || ((item.isDoctorClinic || item.mainCatId === 'health') ? '5678' : '1234');
             if (enteredPin !== correctPin) {
                 showAlert('خطأ', 'الكود السري غير صحيح.', false);
                 return;
@@ -2408,8 +2461,17 @@
         function populateAdmSubCats() {
             const mainId = document.getElementById('admFormMainCat').value;
             const subSel = document.getElementById('admFormSubCat');
+            const subWrapper = subSel ? subSel.parentElement : null;
             const cat = dbCategories.find(c => c.id === mainId);
-            if (cat && subSel) subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+            if (cat && subSel) {
+                if (cat.id === 'health' || !cat.subCategories || cat.subCategories.length === 0) {
+                    subSel.innerHTML = `<option value="direct">مباشر</option>`;
+                    if (subWrapper) subWrapper.classList.add('hidden');
+                } else {
+                    if (subWrapper) subWrapper.classList.remove('hidden');
+                    subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                }
+            }
         }
 
         function onAdminMainCatChange() {
@@ -2453,7 +2515,7 @@
                 address, 
                 pinCode, 
                 status: 'approved', 
-                isDoctorClinic: mainCatId === 'health' && (subCatId === 'dr_omar' || subCatId === 'clinics'), 
+                isDoctorClinic: mainCatId === 'health', 
                 bookings: [], 
                 bookedSeats: 0, 
                 maxSeats: 14, 
