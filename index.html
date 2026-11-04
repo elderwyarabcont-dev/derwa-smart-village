@@ -241,7 +241,7 @@
 
             <div class="text-center pt-4 pb-2">
                 <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 6 - سحابي معتمد وآمن)
+                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 10 - سحابي معتمد وآمن)
                 </span>
             </div>
         </div>
@@ -594,12 +594,20 @@
             <div id="admSub_structure" class="admin-sub-tab hidden space-y-5">
                 <div id="superAdminControls" class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-5 shadow-xl">
                     <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
-                        <h4 class="font-bold text-sm text-primary"><i class="fa-solid fa-folder-tree ml-1.5"></i> الإدارة الشاملة للبنود (الرئيسية والفرعية) والحذف والتعديل</h4>
+                        <h4 class="font-bold text-sm text-primary"><i class="fa-solid fa-folder-tree ml-1.5"></i> الإدارة الشاملة للبنود والأفراد والأكواد والحذف</h4>
                         <span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded font-bold">تحكم كامل</span>
                     </div>
 
-                    <!-- إدارة وتعديل وحذف البنود الرئيسية والفرعية -->
+                    <!-- إدارة وتعديل وحذف الأفراد المسجلين والـ PIN كود -->
                     <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-slate-300 font-bold text-xs">إدارة الأفراد والعيادات والمواصلات والـ PIN كود:</label>
+                        </div>
+                        <div id="adminDirectoryItemsList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- إدارة وتعديل وحذف البنود الرئيسية والفرعية -->
+                    <div class="border-t border-slate-800 pt-5 space-y-3">
                         <div class="flex justify-between items-center">
                             <label class="block text-slate-300 font-bold text-xs">شجرة أقسام وبنود الدليل:</label>
                             <button onclick="openAddCategoryModal()" class="px-2.5 py-1 bg-primary text-slate-950 rounded-lg text-[10px] font-bold shadow"><i class="fa-solid fa-plus ml-1"></i> إضافة بند جديد</button>
@@ -609,7 +617,7 @@
 
                     <!-- إدارة وحذف المشرفين -->
                     <div class="border-t border-slate-800 pt-5 space-y-3">
-                        <h5 class="font-bold text-xs text-slate-300">قائمة المشرفين المسجلين (برقم التليفون والـ PIN كود):</h5>
+                        <h5 class="font-bold text-xs text-slate-300">قائمة المشرفين المسجلين (برقم التليفون والـ PIN):</h5>
                         <div id="supervisorsListContainer" class="space-y-2 max-h-44 overflow-y-auto"></div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
                             <input type="text" id="newSuperName" placeholder="اسم المشرف" class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100">
@@ -1180,7 +1188,6 @@
         let deletedRecords = { items: [], offers: [], jobs: [], cats: [] };
         const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v8';
 
-        // دالة دمج ذكية تمنع ضياع أي إضافات عند تحديث الكود أو المزامنة بين الهواتف
         function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
             const map = new Map();
             (existingArr || []).forEach(item => {
@@ -1245,7 +1252,6 @@
             } catch (e) {}
         }
 
-        // قراءة واسترجاع أي إضافات محفوظة في أي نسخة سابقة على الجهاز ودمجها فوراً
         function loadLocalCache() {
             try {
                 for (let i = 0; i < localStorage.length; i++) {
@@ -1273,7 +1279,6 @@
             } catch (e) {}
         }
 
-        // إعداد Firebase Firestore للربط السحابي المباشر مع الدمج الذكي (بدون مسح إضافات السحابة الحية)
         let db = null;
         let auth = null;
         let currentUser = null;
@@ -1325,7 +1330,7 @@
                 console.warn("Firebase init fallback to Live Relay:", e);
             }
         }
-        // تطبيق التحديثات الجزئية أو الكلية القادمة عبر البث السحابي بين الهواتف مع الدمج الذكي
+
         function applyRemoteOperation(opObj) {
             if (!opObj || !opObj.op) return;
             if (opObj.opId) {
@@ -1334,7 +1339,6 @@
             }
 
             if (opObj.op === 'REQUEST_RESEED') {
-                // إذا طلب جهاز جديد البيانات، نقوم بضخ العناصر غير الموجودة على السيرفر تلقائياً
                 if (Date.now() - lastReseedTime > 30000) {
                     reseedMissingDataToCloud(true);
                 }
@@ -1408,11 +1412,9 @@
             refreshAllViews();
         }
 
-        // إعادة ضخ وتثبيت أي محلات أو بيانات محفوظة على الجهاز إذا انتهت مدة الـ 12 ساعة الخاصة بها على السحابة
         async function reseedMissingDataToCloud(forceAll = false) {
             lastReseedTime = Date.now();
             try {
-                // رفع أي عناصر مسجلة على هذا الجهاز وغير موجودة في نافذة السحابة الحالية (أو كلها عند الطلب)
                 for (const item of dbItems) {
                     const isDefault = [1, 2, 3].includes(Number(item.id));
                     if (forceAll || (!isDefault && !remoteSeenItemIds.has(String(item.id)))) {
@@ -1442,12 +1444,6 @@
             } catch (e) {}
         }
 
-        async function forcePushAllLocalDataToCloud() {
-            await reseedMissingDataToCloud(true);
-            showAlert('تم التثبيت السحابي الشامل', 'تم ضخ وتثبيت كافة المحلات والأشخاص والعروض والبنود المسجلة على جهازك إلى السحابة لتظهر على جميع الهواتف فوراً.');
-        }
-
-        // إرسال أي تعديل فوراً إلى السحابة ليظهر على جميع الهواتف الأخرى
         async function syncWithCloud(deltaPayload = null) {
             const nowTs = Date.now();
             const opId = nowTs + '_' + Math.random().toString(36).substring(2, 8);
@@ -1455,7 +1451,6 @@
             saveLocalCache();
             refreshAllViews();
 
-            // 1. الحفظ في Firebase Firestore إذا كان متاحاً
             if (db && currentUser) {
                 try {
                     const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
@@ -1473,7 +1468,6 @@
                 }
             }
 
-            // 2. البث الفوري عبر خادم ntfy السحابي لربط جميع الهواتف وتطبيقات الأندرويد (APK) ببعضها
             try {
                 let messageToSend = deltaPayload ? { ...deltaPayload, opId, ts: nowTs } : {
                     op: 'FULL_SYNC',
@@ -1521,19 +1515,14 @@
             } catch (e) {}
         }
 
-        // جلب السجل السحابي الكامل عند فتح التطبيق على أي هاتف والاشتراك في البث الحي + الفحص الدوري
         async function connectLiveMultiDeviceCloud() {
             await pollCloudMessages('all');
-
-            // سحب وضخ كافة الإضافات المحفوظة على ذاكرة هذا الهاتف للسحابة تلقائياً (لاستعادة أي إضافات أضفتها أنت مؤخراً)
             await reseedMissingDataToCloud(true);
 
-            // إذا كان هذا الجهاز جديداً ولا يملك إلا البيانات الافتراضية، يطلب من الأجهزة المتصلة ضخ البيانات
             if (dbItems.length <= 3) {
                 syncWithCloud({ op: 'REQUEST_RESEED' });
             }
 
-            // فتح اتصال حي ومستمر (SSE) لاستقبال أي إضافة من هاتف آخر في نفس اللحظة
             try {
                 const evtSource = new EventSource(`${LIVE_SYNC_URL}/sse`);
                 evtSource.onmessage = (event) => {
@@ -1549,7 +1538,6 @@
                 console.warn("SSE connection error:", e);
             }
 
-            // فحص دوري كل 8 ثوانٍ لضمان المزامنة 100% حتى داخل تطبيقات APK التي قد توقف SSE في الخلفية
             setInterval(() => {
                 pollCloudMessages('20s');
             }, 8000);
@@ -1570,7 +1558,6 @@
             }
         }
 
-        // تحديث كافة الواجهات فور وصول بيانات جديدة من هاتف آخر
         function refreshAllViews() {
             renderHomeCategories();
             initJoinForm();
@@ -1977,7 +1964,6 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        // ضغط الصورة بحجم ذكي يضمن بقاء النص أقل من 2500 حرف ليمر عبر البث السحابي الفوري لجميع الهواتف
                         let maxDim = 110;
                         let w = img.width, h = img.height;
                         if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
@@ -2026,7 +2012,6 @@
             const newId = Date.now();
             const isDoc = mainCatId === 'health' && (subCatId === 'dr_omar' || subCatId === 'clinics');
 
-            // أي طلب من نافذة "انضم إلينا" يذهب دائماً بانتظار موافقة المسؤول
             const newItem = { id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: 'pending', isDoctorClinic: isDoc, bookings: [], ratings: [], pinCode: isDoc ? '5678' : '1234' };
             dbItems.push(newItem);
             syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
@@ -2056,7 +2041,6 @@
             const image = document.getElementById('offerImageBase64').value.trim();
             const description = document.getElementById('offerDesc').value.trim();
             const phone = document.getElementById('offerPhone').value.trim();
-            // يذهب العرض دائماً بحالة pending ليظهر في جدول موافقات المسؤول
             const newOffer = { id: Date.now(), type: 'offer', title, store, image, description, phone, status: 'pending' };
             dbOffers.push(newOffer);
             syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
@@ -2079,7 +2063,6 @@
             const store = document.getElementById('jobStore').value.trim();
             const description = document.getElementById('jobDesc').value.trim();
             const phone = document.getElementById('jobPhone').value.trim();
-            // تذهب الوظيفة دائماً بحالة pending لتظهر في جدول موافقات المسؤول
             const newJob = { id: Date.now(), type: 'job', title, store, description, phone, status: 'pending' };
             dbJobs.push(newJob);
             syncWithCloud({ op: 'JOB_UPSERT', job: newJob });
@@ -2186,6 +2169,7 @@
             if (currentLoggedInAdmin.role === 'super_admin') {
                 structureBtn.classList.remove('hidden');
                 renderCategoriesTreeForAdmin();
+                renderAdminDirectoryItemsManager();
                 renderSupervisorsList();
             } else {
                 structureBtn.classList.add('hidden');
@@ -2203,6 +2187,7 @@
             });
             if (subName === 'pins') renderAdminPinsTable();
             if (subName === 'approvals') renderAdminApprovalTable();
+            if (subName === 'structure') renderAdminDirectoryItemsManager();
         }
 
         function renderAdminPinsTable() {
@@ -2563,7 +2548,6 @@
                 `).join('');
             }
 
-            // رندر قوائم الحذف الشامل للعروض والوظائف والأشخاص المعتمدين
             const offersListEl = document.getElementById('adminManageOffersList');
             const jobsListEl = document.getElementById('adminManageJobsList');
             const itemsListEl = document.getElementById('adminManageItemsList');
@@ -2596,42 +2580,93 @@
             }
         }
 
-        function approveSubmission(table, id) {
-            if (table === 'directory') {
-                const item = dbItems.find(x => x.id === id);
+        function renderAdminDirectoryItemsManager() {
+            const container = document.getElementById('adminDirectoryItemsList');
+            if (!container) return;
+            const approvedItems = dbItems.filter(i => i.status === 'approved');
+            if (approvedItems.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-3 text-xs">لا توجد جهات أو أفراد مسجلين</p>`;
+                return;
+            }
+            container.innerHTML = approvedItems.map(item => `
+                <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 space-y-2 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white">${item.name}</span>
+                        <div class="flex items-center space-x-1.5 space-x-reverse">
+                            <span class="text-[10px] text-slate-400">PIN:</span>
+                            <input type="text" maxlength="4" id="dirItemPin_${item.id}" value="${item.pinCode || '1234'}" class="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-primary font-bold">
+                            <button onclick="updateDirItemPin(${item.id})" class="px-2 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px]">حفظ الرمز</button>
+                            <button onclick="deleteDirItem(${item.id})" class="px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-lg font-bold transition text-[10px]"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-slate-400 flex justify-between">
+                        <span>هاتف: <span class="font-mono">${item.phone}</span></span>
+                        <span>العنوان: ${item.address}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateDirItemPin(itemId) {
+            const inputEl = document.getElementById('dirItemPin_' + itemId);
+            if (!inputEl || inputEl.value.trim().length !== 4) {
+                showAlert('خطأ', 'يجب أن يتكون الرمز السري من 4 أرقام.', false);
+                return;
+            }
+            const item = dbItems.find(i => i.id === itemId);
+            if (item) {
+                item.pinCode = inputEl.value.trim();
+                syncWithCloud({ op: 'ITEM_UPSERT', item });
+                showAlert('تم الحفظ', 'تم تحديث الرمز السري للخدمة ومزامنته سحابياً.');
+            }
+        }
+
+        function deleteDirItem(itemId) {
+            deletedRecords.items.push(String(itemId));
+            dbItems = dbItems.filter(x => String(x.id) !== String(itemId));
+            syncWithCloud({ op: 'ITEM_DELETE', id: itemId });
+            renderAdminDirectoryItemsManager();
+            renderHomeCategories();
+            showAlert('تم الحذف', 'تم حذف الفرد أو الخدمة سحابياً بنجاح من جميع الأجهزة.');
+        }
+
+        function approveSubmission(targetTable, id) {
+            if (targetTable === 'directory') {
+                const item = dbItems.find(i => Number(i.id) === Number(id));
                 if (item) {
                     item.status = 'approved';
-                    if ((item.mainCatId === 'health' || item.mainCatId === 'transport') && !item.pinCode) {
-                        item.pinCode = item.isDoctorClinic ? '5678' : '1234';
-                    }
                     syncWithCloud({ op: 'ITEM_UPSERT', item });
                 }
-            } else if (table === 'offer') {
-                const offer = dbOffers.find(x => x.id === id);
+            } else if (targetTable === 'offer') {
+                const offer = dbOffers.find(o => Number(o.id) === Number(id));
                 if (offer) {
                     offer.status = 'approved';
                     syncWithCloud({ op: 'OFFER_UPSERT', offer });
                 }
-            } else if (table === 'job') {
-                const job = dbJobs.find(x => x.id === id);
+            } else if (targetTable === 'job') {
+                const job = dbJobs.find(j => Number(j.id) === Number(id));
                 if (job) {
                     job.status = 'approved';
                     syncWithCloud({ op: 'JOB_UPSERT', job });
                 }
             }
-            showAlert('تم الاعتماد', 'تمت الموافقة ونشر العنصر سحابياً لجميع الهواتف.');
+            renderAdminApprovalTable();
+            renderHomeCategories();
+            renderOffers();
+            renderJobs();
+            showAlert('تم الاعتماد', 'تمت الموافقة على الطلب ونشره سحابياً.');
         }
 
-        function deleteSubmission(table, id) {
-            if (table === 'directory') {
+        function deleteSubmission(targetTable, id) {
+            if (targetTable === 'directory') {
                 deletedRecords.items.push(String(id));
                 dbItems = dbItems.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'ITEM_DELETE', id });
-            } else if (table === 'offer') {
+            } else if (targetTable === 'offer') {
                 deletedRecords.offers.push(String(id));
                 dbOffers = dbOffers.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'OFFER_DELETE', id });
-            } else if (table === 'job') {
+            } else if (targetTable === 'job') {
                 deletedRecords.jobs.push(String(id));
                 dbJobs = dbJobs.filter(x => String(x.id) !== String(id));
                 syncWithCloud({ op: 'JOB_DELETE', id });
@@ -2640,7 +2675,7 @@
             renderHomeCategories();
             renderOffers();
             renderJobs();
-            showAlert('تم الحذف', 'تم حذف العنصر سحابياً بنجاح من جميع الأجهزة.');
+            showAlert('تم الحذف', 'تم رفض وحذف الطلب سحابياً.');
         }
 
         function renderCategoriesTreeForAdmin() {
@@ -2739,7 +2774,6 @@
             document.documentElement.setAttribute('dir', isEn ? 'ltr' : 'rtl');
             document.documentElement.setAttribute('lang', isEn ? 'en' : 'ar');
 
-            // تحديث شكل أزرار اللغة في نافذة الإعدادات
             const arBtn = document.getElementById('langArBtn');
             const enBtn = document.getElementById('langEnBtn');
             if (arBtn && enBtn) {
@@ -2870,7 +2904,6 @@
             document.body.removeChild(ta);
         }
 
-        // ربط جميع الدوال بـ window لتعمل الأزرار بكفاءة تامة
         Object.assign(window, {
             openNotificationsModal, closeNotificationsModal, shareApp, filterHomeSearch, switchTab,
             openContactModal, closeContactModal, submitContactMessage, openAddOfferModal, closeAddOfferModal,
@@ -2887,6 +2920,7 @@
             openAdminAddItemToSub, openBookingModal, closeBookingModal, confirmBooking, openDoctorBookingModal,
             closeDoctorBookingModal, confirmDoctorBooking, applyTheme, applyColor, applyLanguage,
             closeCustomAlert, updateProviderPin, approveSubmission, deleteSubmission,
+            renderAdminDirectoryItemsManager, updateDirItemPin, deleteDirItem,
             updateCategoryName, updateSubCategoryName, deleteMainCategory, deleteSubCategory
         });
 
