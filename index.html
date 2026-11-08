@@ -68,6 +68,9 @@
                 <button onclick="shareApp()" class="w-10 h-10 rounded-full bg-cardBg border border-slate-700/60 flex items-center justify-center text-slate-200 hover:text-primary transition">
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
+                <button onclick="manualForcePullCloud()" title="تحديث البيانات من السحابة" class="w-10 h-10 rounded-full bg-cardBg border border-slate-700/60 flex items-center justify-center text-primary hover:bg-slate-800 transition">
+                    <i id="syncSpinIcon" class="fa-solid fa-rotate text-lg"></i>
+                </button>
             </div>
             
             <div class="flex items-center space-x-3 space-x-reverse">
@@ -241,7 +244,7 @@
 
             <div class="text-center pt-4 pb-2">
                 <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 10 - سحابي معتمد وآمن)
+                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.3 (سحابي مركزي دائم)
                 </span>
             </div>
         </div>
@@ -487,6 +490,9 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-2 space-x-reverse">
+                    <button onclick="forceFullCloudBroadcast()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center shadow-lg">
+                        <i class="fa-solid fa-cloud-arrow-up ml-1.5"></i> بث ومزامنة شاملة لكل الهواتف الآن
+                    </button>
                     <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center">
                         <i class="fa-solid fa-house ml-1.5"></i> الرئيسية
                     </button>
@@ -1069,7 +1075,7 @@
         </div>
     </div>
 
-    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Live Multi-Device Relay) -->
+    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Persistent Cloud Store + Live Relay) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1078,6 +1084,8 @@
         // قناة البث والمزامنة السحابية الحقيقية المباشرة بين جميع الهواتف والأجهزة
         const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_live_v8";
         const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
+        // مخزن سحابي دائم يحفظ الحالة الكاملة للدليل حتى لو كانت هواتف المسؤولين مغلقة
+        const PERSISTENT_KV_URL = "https://kvdb.io/A6Xy9pL4kM2wQ8zV1nB5rT/derwa_village_permanent_state_v1";
 
         let defaultCategories = [
             {
@@ -1278,6 +1286,49 @@
             } catch (e) {}
         }
 
+        async function saveToPersistentCloudStore() {
+            try {
+                const fullState = {
+                    updatedAt: Date.now(),
+                    cats: dbCategories,
+                    items: dbItems,
+                    offers: dbOffers,
+                    jobs: dbJobs,
+                    sups: supervisors,
+                    deleted: deletedRecords
+                };
+                await fetch(PERSISTENT_KV_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(fullState)
+                });
+            } catch (e) {}
+        }
+
+        async function loadFromPersistentCloudStore() {
+            try {
+                const res = await fetch(PERSISTENT_KV_URL);
+                if (res.ok) {
+                    const cloudState = await res.json();
+                    if (cloudState) {
+                        if (cloudState.deleted) {
+                            deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(cloudState.deleted.items || [])]));
+                            deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(cloudState.deleted.offers || [])]));
+                            deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(cloudState.deleted.jobs || [])]));
+                            deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(cloudState.deleted.cats || [])]));
+                        }
+                        if (cloudState.cats) dbCategories = mergeCategories(dbCategories, cloudState.cats, deletedRecords.cats);
+                        if (cloudState.items) dbItems = mergeArrayById(dbItems, cloudState.items, deletedRecords.items);
+                        if (cloudState.offers) dbOffers = mergeArrayById(dbOffers, cloudState.offers, deletedRecords.offers);
+                        if (cloudState.jobs) dbJobs = mergeArrayById(dbJobs, cloudState.jobs, deletedRecords.jobs);
+                        if (cloudState.sups) supervisors = mergeSupervisors(supervisors, cloudState.sups);
+                        saveLocalCache();
+                        refreshAllViews();
+                    }
+                }
+            } catch (e) {}
+        }
+
         let db = null;
         let auth = null;
         let currentUser = null;
@@ -1338,7 +1389,7 @@
             }
 
             if (opObj.op === 'REQUEST_RESEED') {
-                if (Date.now() - lastReseedTime > 30000) {
+                if (Date.now() - lastReseedTime > 10000) {
                     reseedMissingDataToCloud(true);
                 }
                 return;
@@ -1414,6 +1465,8 @@
         async function reseedMissingDataToCloud(forceAll = false) {
             lastReseedTime = Date.now();
             try {
+                await saveToPersistentCloudStore();
+                await syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories, deletedCats: deletedRecords.cats });
                 for (const item of dbItems) {
                     const isDefault = [1, 2, 3].includes(Number(item.id));
                     if (forceAll || (!isDefault && !remoteSeenItemIds.has(String(item.id)))) {
@@ -1433,14 +1486,27 @@
                         await syncWithCloud({ op: 'JOB_UPSERT', job });
                     }
                 }
-                if (forceAll || (!remoteSeenCats && dbCategories.length > 8)) {
-                    remoteSeenCats = true;
-                    await syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories, deletedCats: deletedRecords.cats });
-                }
                 if (forceAll && supervisors.length > 2) {
                     await syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
                 }
             } catch (e) {}
+        }
+
+        async function forceFullCloudBroadcast() {
+            await reseedMissingDataToCloud(true);
+            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص والعروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف فوراً.');
+        }
+
+        async function manualForcePullCloud() {
+            const icon = document.getElementById('syncSpinIcon');
+            if (icon) icon.classList.add('fa-spin');
+            await loadFromPersistentCloudStore();
+            await pollCloudMessages('all');
+            await syncWithCloud({ op: 'REQUEST_RESEED' });
+            setTimeout(() => {
+                if (icon) icon.classList.remove('fa-spin');
+                showAlert('تم التحديث', 'تم جلب أحدث البيانات من السحابة بنجاح.');
+            }, 900);
         }
 
         async function syncWithCloud(deltaPayload = null) {
@@ -1449,6 +1515,8 @@
             processedOpIds.add(opId);
             saveLocalCache();
             refreshAllViews();
+
+            saveToPersistentCloudStore();
 
             if (db && currentUser) {
                 try {
@@ -1515,11 +1583,13 @@
         }
 
         async function connectLiveMultiDeviceCloud() {
+            await loadFromPersistentCloudStore();
             await pollCloudMessages('all');
-            await reseedMissingDataToCloud(true);
 
-            if (dbItems.length <= 3) {
-                syncWithCloud({ op: 'REQUEST_RESEED' });
+            if (dbItems.length > 3 || dbCategories.length > 8) {
+                await reseedMissingDataToCloud(true);
+            } else {
+                await syncWithCloud({ op: 'REQUEST_RESEED' });
             }
 
             try {
@@ -1538,7 +1608,8 @@
             }
 
             setInterval(() => {
-                pollCloudMessages('20s');
+                loadFromPersistentCloudStore();
+                pollCloudMessages('25s');
             }, 8000);
         }
 
@@ -2875,7 +2946,7 @@
                 bannerJobsMainDesc: isEn ? 'Jobs in local shops and businesses for Derwa youth' : 'وظائف المحلات والمصالح لأبناء دروة',
                 bannerContactTitle: isEn ? 'Contact Administration' : 'تواصل مع الإدارة',
                 bannerContactDesc: isEn ? 'Inquiries, suggestions, or data correction' : 'استفسار، اقتراح، أو تصحيح بيانات',
-                appVersionBadge: isEn ? 'Derwa Smart Village v3.2 (Code 10 - Verified Cloud)' : 'الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.2 (رمز رقم 10 - سحابي معتمد وآمن)',
+                appVersionBadge: isEn ? 'Derwa Smart Village v3.3 (Permanent Cloud)' : 'الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.3 (سحابي مركزي دائم)',
                 offersHeaderTitle: isEn ? 'Village Store Offers' : 'عروض داخل القرية',
                 offersHeaderSub: isEn ? 'Commercial store offers with photos, verified by Admin' : 'عروض المحلات التجارية مع الصور، معتمدة من الإدارة',
                 addOfferBtnText: isEn ? 'Add Offer (With Photo)' : 'أضف عرضك (مع صورة)',
@@ -2983,7 +3054,8 @@
             closeDoctorBookingModal, confirmDoctorBooking, applyTheme, applyColor, applyLanguage,
             closeCustomAlert, updateProviderPin, approveSubmission, deleteSubmission,
             renderAdminDirectoryItemsManager, updateDirItemPin, deleteDirItem,
-            updateCategoryName, updateSubCategoryName, deleteMainCategory, deleteSubCategory
+            updateCategoryName, updateSubCategoryName, deleteMainCategory, deleteSubCategory,
+            forceFullCloudBroadcast, manualForcePullCloud
         });
 
         window.addEventListener('DOMContentLoaded', () => {
