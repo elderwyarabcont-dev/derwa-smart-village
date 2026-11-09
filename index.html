@@ -806,7 +806,7 @@
                     <input type="text" id="offerStore" required placeholder="صيدلية الشفاء" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
                 <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">صورة العرض من الهاتف (تُعالج تلقائياً بدقة HD)</label>
+                    <label class="block text-slate-300 mb-1 font-semibold">صورة العرض من الهاتف (تُحفظ بالحجم الطبيعي الكامل)</label>
                     <input type="file" id="offerImageFile" accept="image/*" onchange="handleOfferImageUpload(event)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 text-[11px] file:mr-4 file:py-1 file:px-4 file:rounded-lg file:bg-primary file:text-slate-950">
                     <input type="hidden" id="offerImageBase64">
                     <div id="offerImagePreviewBox" class="hidden mt-2 relative rounded-xl overflow-hidden border border-slate-700 bg-slate-950 h-32 flex items-center justify-center">
@@ -826,16 +826,24 @@
         </div>
     </div>
 
-    <!-- Fullscreen Image Viewer (Lightbox) Modal -->
-    <div id="imageViewerModal" onclick="closeImageViewer()" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4">
-        <div class="max-w-3xl w-full flex justify-between items-center mb-3 px-2" onclick="event.stopPropagation()">
-            <h4 id="imageViewerTitle" class="font-bold text-sm text-primary truncate">صورة العرض</h4>
-            <button onclick="closeImageViewer()" class="w-9 h-9 rounded-full bg-slate-800 text-white hover:bg-red-500 transition flex items-center justify-center">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
+    <!-- Fullscreen Natural Size Image Viewer & Auto-Downloader Modal -->
+    <div id="imageViewerModal" onclick="closeImageViewer()" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-2 sm:p-4">
+        <div class="max-w-4xl w-full flex justify-between items-center mb-2 px-2" onclick="event.stopPropagation()">
+            <div>
+                <h4 id="imageViewerTitle" class="font-bold text-xs sm:text-sm text-primary truncate">صورة العرض بالحجم الطبيعي</h4>
+                <p class="text-[10px] text-emerald-400">تم تنزيل نسخة بالحجم الطبيعي تلقائياً على هاتفك</p>
+            </div>
+            <div class="flex items-center space-x-2 space-x-reverse">
+                <a id="imageViewerDownloadBtn" href="#" download="Derwa_Offer.jpg" class="px-3 py-1.5 rounded-xl bg-primary text-slate-950 font-bold text-xs flex items-center shadow-lg">
+                    <i class="fa-solid fa-download ml-1.5"></i> حفظ في الهاتف
+                </a>
+                <button onclick="closeImageViewer()" class="w-9 h-9 rounded-full bg-slate-800 text-white hover:bg-red-500 transition flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
         </div>
-        <div class="max-w-3xl w-full max-h-[82vh] flex items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 p-2" onclick="event.stopPropagation()">
-            <img id="imageViewerImg" src="" alt="Full Offer Image" class="max-w-full max-h-[78vh] object-contain rounded-xl shadow-2xl">
+        <div class="max-w-4xl w-full max-h-[85vh] overflow-auto rounded-2xl border border-slate-800 bg-slate-900/80 p-2 flex items-center justify-center" onclick="event.stopPropagation()">
+            <img id="imageViewerImg" src="" alt="Full Natural Offer Image" class="max-w-none w-auto h-auto max-h-[80vh] object-contain rounded-xl shadow-2xl mx-auto">
         </div>
     </div>
 
@@ -1091,7 +1099,7 @@
         </div>
     </div>
 
-    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Persistent Cloud Store + Live Relay) -->
+    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Persistent Cloud Store + Dedicated Per-Offer Image Store + Live Relay) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1101,7 +1109,8 @@
         const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_live_v8";
         const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
         // مخزن سحابي دائم يحفظ الحالة الكاملة للدليل حتى لو كانت هواتف المسؤولين مغلقة
-        const PERSISTENT_KV_URL = "https://kvdb.io/A6Xy9pL4kM2wQ8zV1nB5rT/derwa_village_permanent_state_v1";
+        const PERSISTENT_KV_BASE = "https://kvdb.io/A6Xy9pL4kM2wQ8zV1nB5rT";
+        const PERSISTENT_KV_URL = `${PERSISTENT_KV_BASE}/derwa_village_permanent_state_v1`;
 
         let defaultCategories = [
             {
@@ -1202,10 +1211,48 @@
         const remoteSeenItemIds = new Set();
         const remoteSeenOfferIds = new Set();
         const remoteSeenJobIds = new Set();
+        const fetchingOfferImgIds = new Set();
         let remoteSeenCats = false;
         let lastReseedTime = 0;
         let deletedRecords = { items: [], offers: [], jobs: [], cats: [] };
         const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v8';
+
+        // حفظ واسترجاع صورة كل إعلان بشكل مستقل في السحابة لضمان ظهور جميع صور الإعلانات بجودتها وحجمها الطبيعي
+        async function saveOfferImageToCloud(offerId, base64Data) {
+            if (!offerId || !base64Data) return;
+            try {
+                await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                    body: base64Data
+                });
+            } catch (e) {}
+        }
+
+        async function ensureAllOfferImagesLoaded() {
+            let anyUpdated = false;
+            for (const offer of dbOffers) {
+                if (offer && offer.id && !offer.image && offer.hasImage !== false && !fetchingOfferImgIds.has(String(offer.id))) {
+                    fetchingOfferImgIds.add(String(offer.id));
+                    try {
+                        const res = await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offer.id}`);
+                        if (res.ok) {
+                            const imgData = await res.text();
+                            if (imgData && imgData.startsWith('data:image')) {
+                                offer.image = imgData;
+                                offer.hasImage = true;
+                                anyUpdated = true;
+                            }
+                        }
+                    } catch (e) {}
+                    fetchingOfferImgIds.delete(String(offer.id));
+                }
+            }
+            if (anyUpdated) {
+                saveLocalCache();
+                refreshAllViews();
+            }
+        }
 
         function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
             const map = new Map();
@@ -1219,6 +1266,9 @@
                     const prev = map.get(String(item.id));
                     if (prev && prev.image && !item.image) {
                         item.image = prev.image;
+                    }
+                    if (prev && prev.hasImage && item.hasImage === undefined) {
+                        item.hasImage = prev.hasImage;
                     }
                     map.set(String(item.id), item);
                 }
@@ -1308,11 +1358,22 @@
 
         async function saveToPersistentCloudStore() {
             try {
+                // حفظ بيانات العروض في الملف الرئيسي بدون تكديس الصور الثقيلة مع حفظ كل صورة في ملفها السحابي المستقل
+                const lightweightOffers = dbOffers.map(o => ({
+                    ...o,
+                    hasImage: Boolean(o.image || o.hasImage),
+                    image: ''
+                }));
+                for (const o of dbOffers) {
+                    if (o && o.id && o.image) {
+                        saveOfferImageToCloud(o.id, o.image);
+                    }
+                }
                 const fullState = {
                     updatedAt: Date.now(),
                     cats: dbCategories,
                     items: dbItems,
-                    offers: dbOffers,
+                    offers: lightweightOffers,
                     jobs: dbJobs,
                     sups: supervisors,
                     deleted: deletedRecords
@@ -1344,6 +1405,7 @@
                         if (cloudState.sups) supervisors = mergeSupervisors(supervisors, cloudState.sups);
                         saveLocalCache();
                         refreshAllViews();
+                        await ensureAllOfferImagesLoaded();
                     }
                 }
             } catch (e) {}
@@ -1389,6 +1451,7 @@
                                     if (cloudData.supervisorsJson) supervisors = mergeSupervisors(supervisors, JSON.parse(cloudData.supervisorsJson));
                                     saveLocalCache();
                                     refreshAllViews();
+                                    ensureAllOfferImagesLoaded();
                                 }
                             }, (err) => {
                                 console.warn("Firestore listener error:", err);
@@ -1433,6 +1496,7 @@
                 if (opObj.offers) {
                     opObj.offers.forEach(of => { if (of && of.id !== undefined) remoteSeenOfferIds.add(String(of.id)); });
                     dbOffers = mergeArrayById(dbOffers, opObj.offers, deletedRecords.offers);
+                    ensureAllOfferImagesLoaded();
                 }
                 if (opObj.jobs) {
                     opObj.jobs.forEach(jb => { if (jb && jb.id !== undefined) remoteSeenJobIds.add(String(jb.id)); });
@@ -1466,9 +1530,7 @@
                     } else {
                         dbOffers.push(opObj.offer);
                     }
-                    if (!opObj.offer.image) {
-                        loadFromPersistentCloudStore();
-                    }
+                    ensureAllOfferImagesLoaded();
                 }
             } else if (opObj.op === 'OFFER_DELETE' && opObj.id !== undefined) {
                 deletedRecords.offers.push(String(opObj.id));
@@ -1503,6 +1565,9 @@
                     }
                 }
                 for (const offer of dbOffers) {
+                    if (offer.image) {
+                        await saveOfferImageToCloud(offer.id, offer.image);
+                    }
                     if (forceAll || !remoteSeenOfferIds.has(String(offer.id))) {
                         remoteSeenOfferIds.add(String(offer.id));
                         await syncWithCloud({ op: 'OFFER_UPSERT', offer });
@@ -1522,7 +1587,7 @@
 
         async function forceFullCloudBroadcast() {
             await reseedMissingDataToCloud(true);
-            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص والعروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف فوراً.');
+            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص وجميع صور العروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف فوراً.');
         }
 
         async function manualForcePullCloud() {
@@ -1530,10 +1595,11 @@
             if (icon) icon.classList.add('fa-spin');
             await loadFromPersistentCloudStore();
             await pollCloudMessages('all');
+            await ensureAllOfferImagesLoaded();
             await syncWithCloud({ op: 'REQUEST_RESEED' });
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
-                showAlert('تم التحديث', 'تم جلب أحدث البيانات من السحابة بنجاح.');
+                showAlert('تم التحديث', 'تم جلب أحدث البيانات وجميع صور العروض من السحابة بنجاح.');
             }, 900);
         }
 
@@ -1544,16 +1610,20 @@
             saveLocalCache();
             refreshAllViews();
 
+            if (deltaPayload && deltaPayload.offer && deltaPayload.offer.image) {
+                await saveOfferImageToCloud(deltaPayload.offer.id, deltaPayload.offer.image);
+            }
             await saveToPersistentCloudStore();
 
             if (db && currentUser) {
                 try {
                     const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'village_cloud_store', 'global_state');
+                    const slimOffersForDoc = dbOffers.map(o => ({ ...o, hasImage: Boolean(o.image || o.hasImage), image: '' }));
                     await setDoc(stateDocRef, {
                         updatedAt: nowTs,
                         categoriesJson: JSON.stringify(dbCategories),
                         itemsJson: JSON.stringify(dbItems),
-                        offersJson: JSON.stringify(dbOffers),
+                        offersJson: JSON.stringify(slimOffersForDoc),
                         jobsJson: JSON.stringify(dbJobs),
                         supervisorsJson: JSON.stringify(supervisors),
                         deletedJson: JSON.stringify(deletedRecords)
@@ -1570,18 +1640,18 @@
                     ts: nowTs,
                     cats: dbCategories,
                     items: dbItems,
-                    offers: dbOffers,
+                    offers: dbOffers.map(o => ({ ...o, hasImage: Boolean(o.image || o.hasImage), image: '' })),
                     jobs: dbJobs,
                     sups: supervisors,
                     deleted: deletedRecords
                 };
 
-                let bodyStr = JSON.stringify(messageToSend);
-                if (bodyStr.length > 3800 && messageToSend.offer && messageToSend.offer.image) {
-                    const slimOffer = { ...messageToSend.offer, image: '' };
-                    bodyStr = JSON.stringify({ ...messageToSend, offer: slimOffer });
+                if (messageToSend.offer && messageToSend.offer.image) {
+                    const slimOffer = { ...messageToSend.offer, hasImage: true, image: '' };
+                    messageToSend = { ...messageToSend, offer: slimOffer };
                 }
 
+                let bodyStr = JSON.stringify(messageToSend);
                 await fetch(LIVE_SYNC_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
@@ -1613,8 +1683,9 @@
         async function connectLiveMultiDeviceCloud() {
             await loadFromPersistentCloudStore();
             await pollCloudMessages('all');
+            await ensureAllOfferImagesLoaded();
 
-            if (dbItems.length > 3 || dbCategories.length > 8) {
+            if (dbItems.length > 3 || dbCategories.length > 8 || dbOffers.length > 0) {
                 await reseedMissingDataToCloud(true);
             } else {
                 await syncWithCloud({ op: 'REQUEST_RESEED' });
@@ -1731,12 +1802,44 @@
         }
         function closeCustomAlert() { document.getElementById('customAlertModal').classList.add('hidden'); }
 
-        function openImageViewer(offerId) {
+        // فتح الصورة بحجمها الطبيعي وتنزيلها تلقائياً على الهاتف عند الضغط عليها
+        async function openImageViewer(offerId) {
             const offer = dbOffers.find(o => Number(o.id) === Number(offerId));
-            if (!offer || !offer.image) return;
+            if (!offer) return;
+            if (!offer.image) {
+                try {
+                    const res = await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offer.id}`);
+                    if (res.ok) {
+                        const imgData = await res.text();
+                        if (imgData && imgData.startsWith('data:image')) {
+                            offer.image = imgData;
+                            saveLocalCache();
+                            renderOffers();
+                        }
+                    }
+                } catch (e) {}
+            }
+            if (!offer.image) return;
+
+            const safeFileName = `Derwa_Offer_${(offer.title || offer.id).replace(/\s+/g, '_')}.jpg`;
             document.getElementById('imageViewerImg').src = offer.image;
             document.getElementById('imageViewerTitle').innerText = `${offer.title} — ${offer.store}`;
+            const dlBtn = document.getElementById('imageViewerDownloadBtn');
+            if (dlBtn) {
+                dlBtn.href = offer.image;
+                dlBtn.download = safeFileName;
+            }
             document.getElementById('imageViewerModal').classList.remove('hidden');
+
+            // تنزيل تلقائي للصورة بالحجم الطبيعي في الهاتف
+            try {
+                const autoLink = document.createElement('a');
+                autoLink.href = offer.image;
+                autoLink.download = safeFileName;
+                document.body.appendChild(autoLink);
+                autoLink.click();
+                document.body.removeChild(autoLink);
+            } catch (e) {}
         }
         function closeImageViewer() {
             document.getElementById('imageViewerModal').classList.add('hidden');
@@ -1761,7 +1864,10 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (targetId === 'home') renderHomeCategories();
-            if (targetId === 'offers') renderOffers();
+            if (targetId === 'offers') {
+                renderOffers();
+                ensureAllOfferImagesLoaded();
+            }
             if (targetId === 'jobs') renderJobs();
             if (targetId === 'provider') initProviderDashboard();
             if (targetId === 'admin' && currentLoggedInAdmin) renderAdminDashboard();
@@ -1811,17 +1917,21 @@
             }
             const badgeTxt = currentLang === 'en' ? 'Verified Offer' : 'عرض معتمد';
             const waTxt = currentLang === 'en' ? 'WhatsApp' : 'واتساب العرض';
-            const zoomTxt = currentLang === 'en' ? 'Click to enlarge image' : 'اضغط لتكبير الصورة بوضوح';
+            const zoomTxt = currentLang === 'en' ? 'Click to open & download full size' : 'اضغط لفتح وتنزيل الصورة بحجمها الطبيعي';
             container.innerHTML = approvedOffers.map(offer => `
                 <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
                     <div class="space-y-3">
                         ${offer.image ? `
-                        <div onclick="openImageViewer(${offer.id})" class="w-full h-60 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800/80 cursor-pointer relative group flex items-center justify-center">
-                            <img src="${offer.image}" alt="Offer Image" class="w-full h-full object-contain group-hover:scale-105 transition duration-300">
-                            <div class="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-sm text-primary text-[10px] font-bold px-2.5 py-1 rounded-lg border border-primary/30 flex items-center shadow">
-                                <i class="fa-solid fa-magnifying-glass-plus ml-1"></i> ${zoomTxt}
+                        <div onclick="openImageViewer(${offer.id})" class="w-full min-h-[16rem] max-h-[26rem] rounded-2xl overflow-hidden bg-slate-950 border border-slate-800/80 cursor-pointer relative group flex items-center justify-center p-1">
+                            <img src="${offer.image}" alt="${offer.title}" class="w-full h-auto max-h-[25rem] object-contain rounded-xl group-hover:scale-[1.02] transition duration-300">
+                            <div class="absolute bottom-2.5 left-2.5 bg-slate-950/85 backdrop-blur-sm text-primary text-[10px] font-bold px-3 py-1.5 rounded-xl border border-primary/40 flex items-center shadow-lg">
+                                <i class="fa-solid fa-download ml-1.5"></i> ${zoomTxt}
                             </div>
-                        </div>` : ''}
+                        </div>` : (offer.hasImage ? `
+                        <div onclick="openImageViewer(${offer.id})" class="w-full h-44 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col items-center justify-center text-slate-400 text-xs cursor-pointer hover:border-primary transition gap-2">
+                            <i class="fa-solid fa-cloud-arrow-down text-2xl text-primary animate-bounce"></i>
+                            <span>جاري تحميل صورة العرض بالحجم الطبيعي... اضغط هنا لفتحها</span>
+                        </div>` : '')}
                         <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-primary">${offer.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${offer.store}</p></div><span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">${badgeTxt}</span></div>
                         <p class="text-xs text-slate-300 leading-relaxed">${offer.description}</p>
                     </div>
@@ -2125,7 +2235,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        let maxDim = 800;
+                        let maxDim = 1200;
                         let w = img.width, h = img.height;
                         if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
                         else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
@@ -2135,7 +2245,7 @@
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        let dataUrl = canvas.toDataURL('image/jpeg', 0.80);
+                        let dataUrl = canvas.toDataURL('image/jpeg', 0.88);
                         document.getElementById('offerImageBase64').value = dataUrl;
                         const prevBox = document.getElementById('offerImagePreviewBox');
                         const prevEl = document.getElementById('offerImagePreviewEl');
@@ -2212,19 +2322,23 @@
             document.getElementById('addOfferModal').classList.remove('hidden');
         }
         function closeAddOfferModal() { document.getElementById('addOfferModal').classList.add('hidden'); }
-        function submitOffer(e) {
+        async function submitOffer(e) {
             e.preventDefault();
             const title = document.getElementById('offerTitle').value.trim();
             const store = document.getElementById('offerStore').value.trim();
             const image = document.getElementById('offerImageBase64').value.trim();
             const description = document.getElementById('offerDesc').value.trim();
             const phone = document.getElementById('offerPhone').value.trim();
-            const newOffer = { id: Date.now(), type: 'offer', title, store, image, description, phone, status: 'pending' };
+            const offerId = Date.now();
+            const newOffer = { id: offerId, type: 'offer', title, store, image, hasImage: Boolean(image), description, phone, status: 'pending' };
             dbOffers.push(newOffer);
-            syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
+            if (image) {
+                await saveOfferImageToCloud(offerId, image);
+            }
+            await syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
             closeAddOfferModal();
             renderOffers();
-            showAlert('تم إرسال العرض للمسؤول', 'تمت معالجة الصورة بدقة واضحة وإرسال العرض إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه.');
+            showAlert('تم إرسال العرض للمسؤول', 'تم حفظ الصورة بحجمها الطبيعي الكامل وإرسال العرض إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه.');
         }
 
         function openAddJobModal() {
@@ -2724,7 +2838,7 @@
                             <div class="font-bold text-white">${i.name}</div>
                             <div class="text-[10px] text-primary font-semibold mt-0.5">${i.targetTable === 'offer' ? '🏷️ طلب عرض محل' : i.targetTable === 'job' ? '💼 طلب إعلان وظيفة' : '👤 طلب انضمام للدليل'}</div>
                             ${i.subInfo ? `<div class="text-[10px] text-slate-400 mt-0.5">${i.subInfo}</div>` : ''}
-                            ${i.image ? `<button onclick="openImageViewer(${i.id})" class="mt-1 px-2 py-0.5 bg-slate-800 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-eye ml-1"></i> معاينة صورة العرض</button>` : ''}
+                            ${(i.image || i.hasImage) ? `<button onclick="openImageViewer(${i.id})" class="mt-1 px-2 py-0.5 bg-slate-800 text-primary rounded text-[10px] font-bold"><i class="fa-solid fa-eye ml-1"></i> معاينة وتنزيل صورة العرض</button>` : ''}
                         </td>
                         <td class="p-3 font-mono">${i.phone || '—'}</td>
                         <td class="p-3 text-amber-400 font-bold">قيد المراجعة</td>
@@ -2818,31 +2932,34 @@
             showAlert('تم الحذف', 'تم حذف الفرد أو الخدمة سحابياً بنجاح من جميع الأجهزة.');
         }
 
-        function approveSubmission(targetTable, id) {
+        async function approveSubmission(targetTable, id) {
             if (targetTable === 'directory') {
                 const item = dbItems.find(i => Number(i.id) === Number(id));
                 if (item) {
                     item.status = 'approved';
-                    syncWithCloud({ op: 'ITEM_UPSERT', item });
+                    await syncWithCloud({ op: 'ITEM_UPSERT', item });
                 }
             } else if (targetTable === 'offer') {
                 const offer = dbOffers.find(o => Number(o.id) === Number(id));
                 if (offer) {
                     offer.status = 'approved';
-                    syncWithCloud({ op: 'OFFER_UPSERT', offer });
+                    if (offer.image) {
+                        await saveOfferImageToCloud(offer.id, offer.image);
+                    }
+                    await syncWithCloud({ op: 'OFFER_UPSERT', offer });
                 }
             } else if (targetTable === 'job') {
                 const job = dbJobs.find(j => Number(j.id) === Number(id));
                 if (job) {
                     job.status = 'approved';
-                    syncWithCloud({ op: 'JOB_UPSERT', job });
+                    await syncWithCloud({ op: 'JOB_UPSERT', job });
                 }
             }
             renderAdminApprovalTable();
             renderHomeCategories();
             renderOffers();
             renderJobs();
-            showAlert('تم الاعتماد', 'تمت الموافقة على الطلب ونشره سحابياً.');
+            showAlert('تم الاعتماد', 'تمت الموافقة على الطلب ونشره سحابياً مع صورته كاملة.');
         }
 
         function deleteSubmission(targetTable, id) {
