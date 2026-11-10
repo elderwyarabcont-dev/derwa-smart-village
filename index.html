@@ -153,10 +153,9 @@
                         </div>
                         <div>
                             <h4 id="bannerAdminMsgTitle" class="font-bold text-sm">رسائل الإدارة</h4>
-                            <p id="bannerAdminMsgDesc" class="text-xs text-slate-400">لا توجد رسائل من الإدارة حالياً</p>
                         </div>
                     </div>
-                    <span id="viewAllText1" class="text-xs text-slate-500 group-hover:text-primary transition">عرض الكل <i class="fa-solid fa-angle-left mr-1"></i></span>
+                    <span id="homeAdminCountBadge" class="text-xs bg-primary/15 text-primary font-bold px-2.5 py-1 rounded-full">0 رسالة</span>
                 </div>
 
                 <div onclick="switchTab('offers')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
@@ -166,7 +165,6 @@
                         </div>
                         <div>
                             <h4 id="bannerOffersTitle" class="font-bold text-sm">عروض داخل القرية</h4>
-                            <p id="bannerOffersDesc" class="text-xs text-slate-400">لا توجد عروض منشورة حالياً</p>
                         </div>
                     </div>
                     <span id="homeOffersCountBadge" class="text-xs bg-primary/15 text-primary font-bold px-2.5 py-1 rounded-full">0 عرض</span>
@@ -179,7 +177,6 @@
                         </div>
                         <div>
                             <h4 id="bannerJobsTitle" class="font-bold text-sm">وظائف داخل القرية</h4>
-                            <p id="bannerJobsDesc" class="text-xs text-slate-400">لا توجد وظائف منشورة حالياً</p>
                         </div>
                     </div>
                     <span id="homeJobsCountBadge" class="text-xs bg-amber-500/15 text-amber-400 font-bold px-2.5 py-1 rounded-full">0 وظيفة</span>
@@ -244,7 +241,7 @@
 
             <div class="text-center pt-4 pb-2">
                 <span id="appVersionBadge" class="inline-block bg-cardBg border border-slate-800 text-slate-400 text-xs px-4 py-1.5 rounded-full font-mono">
-                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.4 (رمز رقم 12 - سحابي مركزي دائم)
+                    الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.5 (رمز رقم 13 - سحابي مركزي دائم)
                 </span>
             </div>
         </div>
@@ -418,11 +415,11 @@
                     </div>
                 </div>
 
-                <!-- Doctor & Driver Mini-Dashboard Access Button -->
+                <!-- Provider Dashboard Access Button (Renamed) -->
                 <div onclick="switchTab('provider')" class="bg-cardBg border border-blue-500/40 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/60 transition shadow-lg">
                     <div class="flex items-center space-x-3 space-x-reverse text-blue-400 font-bold">
                         <i class="fa-solid fa-calendar-check text-xl ml-3"></i>
-                        <span id="menuProviderDashText">لوحة تحكم الأطباء والسائقين (إدارة الحجوزات)</span>
+                        <span id="menuProviderDashText">لوحة التحكم للبنود ذات الحجز (إدارة المواعيد والركاب)</span>
                     </div>
                     <i class="fa-solid fa-angle-left text-blue-400"></i>
                 </div>
@@ -447,7 +444,7 @@
             </div>
         </div>
 
-        <!-- ================= SECTION 5.5: DOCTOR & DRIVER MINI-DASHBOARD ================= -->
+        <!-- ================= SECTION 5.5: PROVIDER DASHBOARD (BOOKING ENABLED CATEGORIES) ================= -->
         <div id="tabProvider" class="tab-content hidden space-y-5 max-w-2xl mx-auto">
             <div class="bg-gradient-to-r from-slate-900 via-cardBg to-slate-900 border border-blue-500/30 rounded-3xl p-5 flex flex-wrap justify-between items-center gap-4 shadow-xl">
                 <div class="flex items-center space-x-3 space-x-reverse">
@@ -455,8 +452,8 @@
                         <i class="fa-solid fa-clipboard-user"></i>
                     </div>
                     <div>
-                        <h3 class="font-extrabold text-base md:text-lg text-white">لوحة حجوزات الأطباء والسائقين</h3>
-                        <p class="text-xs text-slate-400 mt-0.5">متابعة فورية للركاب والمرضى المسجلين اليوم</p>
+                        <h3 class="font-extrabold text-base md:text-lg text-white">لوحة التحكم للبنود ذات الحجز</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">متابعة فورية للمرضى والركاب المسجلين اليوم</p>
                     </div>
                 </div>
                 <button onclick="switchTab('home')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center">
@@ -465,7 +462,7 @@
             </div>
 
             <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl text-xs">
-                <label class="block text-slate-300 font-bold text-sm">اختر العيادة أو خط الميكروباص لعرض كشف الحجوزات الحالية:</label>
+                <label class="block text-slate-300 font-bold text-sm">اختر الجهة أو خط السير لعرض كشف الحجوزات الحالية:</label>
                 <select id="providerSelectDropdown" onchange="renderProviderDashboard()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-blue-400 font-bold">
                     <!-- Populated dynamically -->
                 </select>
@@ -507,7 +504,7 @@
                     <i class="fa-solid fa-toolbox ml-1.5"></i> الإضافة المباشرة
                 </button>
                 <button onclick="switchAdminSubTab('pins')" id="admTabBtn_pins" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center">
-                    <i class="fa-solid fa-key ml-1.5"></i> أكواد PIN للأطباء
+                    <i class="fa-solid fa-key ml-1.5"></i> أكواد PIN للجهات
                 </button>
                 <button onclick="switchAdminSubTab('approvals')" id="admTabBtn_approvals" class="py-2.5 rounded-xl text-slate-400 hover:text-white transition flex items-center justify-center relative">
                     <i class="fa-solid fa-list-check ml-1.5"></i> الطلبات والاعتماد
@@ -531,7 +528,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                     <button onclick="openAdminAddServiceModal()" class="p-4 bg-primary hover:opacity-95 text-slate-950 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg shadow-primary/20">
                         <i class="fa-solid fa-user-plus text-2xl"></i>
-                        <span>إضافة شخص / عيادة / محل للبند</span>
+                        <span>إضافة شخص / عيادة / جهة للبند</span>
                     </button>
                     <button onclick="openAddCategoryModal()" class="p-4 bg-slate-950 hover:bg-slate-900 text-primary border border-primary/40 font-extrabold rounded-2xl text-xs transition flex flex-col items-center justify-center gap-2 shadow-lg">
                         <i class="fa-solid fa-folder-plus text-2xl"></i>
@@ -540,12 +537,12 @@
                 </div>
             </div>
 
-            <!-- SUB-SECTION 2: إدارة أكواد PIN -->
+            <!-- SUB-SECTION 2: إدارة أكواد PIN للجهات ذات زر الحجز -->
             <div id="admSub_pins" class="admin-sub-tab hidden bg-cardBg border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
                 <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                     <div class="flex items-center space-x-2 space-x-reverse text-blue-400">
                         <i class="fa-solid fa-key text-lg"></i>
-                        <h4 class="font-extrabold text-base">إدارة الأكواد السرية (PIN Code)</h4>
+                        <h4 class="font-extrabold text-base">إدارة الأكواد السرية (PIN Code) للجهات ذات زر الحجز</h4>
                     </div>
                 </div>
                 <div id="adminPinsTableContainer" class="space-y-3 pt-2"></div>
@@ -697,7 +694,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-300 mb-1 font-semibold">القسم الفرعي *</label>
-                        <select id="admFormSubCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100"></select>
+                        <select id="admFormSubCat" onchange="onAdminSubCatChange()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -714,7 +711,7 @@
                     <label class="block text-slate-300 mb-1 font-semibold">العنوان التفصيلي *</label>
                     <input type="text" id="admFormAddress" required placeholder="شارع المركز الرئيسي - دروة" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
-                <!-- حقل الرمز السري يظهر حصرياً للأطباء أو المواصلات أو البنود التي بها حجوزات فقط -->
+                <!-- حقل الرمز السري يظهر حصرياً للجهات التي تملك زر الحجز -->
                 <div id="admPinWrapper" class="hidden">
                     <label class="block text-slate-300 mb-1 font-semibold">الرمز السري PIN (4 أرقام لدخول الجهة) *</label>
                     <input type="text" id="admFormPin" maxlength="4" placeholder="5678" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 font-mono">
@@ -761,7 +758,7 @@
                     <label class="block text-slate-300 mb-1 font-semibold">العنوان التفصيلي *</label>
                     <input type="text" id="editItemAddress" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100">
                 </div>
-                <div>
+                <div id="editPinWrapper" class="hidden">
                     <label class="block text-slate-300 mb-1 font-semibold">الرمز السري PIN (4 أرقام)</label>
                     <input type="text" id="editItemPin" maxlength="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono">
                 </div>
@@ -784,7 +781,7 @@
                     <label class="block text-slate-300 mb-1 font-semibold">اتجاه السفر *</label>
                     <select id="bookingDirection" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-bold">
                         <option value="دروة إلى الوجهة">من دروة إلى الوجهة</option>
-                        <option value="الوجهة إلى دروة">من الوجهة إلى دروة (العودة)</option>
+                        <option value="الوجهة إلى دروة">من الووجهة إلى دروة (العودة)</option>
                     </select>
                 </div>
                 <div>
@@ -1151,7 +1148,7 @@
         </div>
     </div>
 
-    <!-- Application JavaScript with Real-Time Cloud Sync (Firestore + Persistent Cloud Store + Per-Offer Image Store + Live Relay) -->
+    <!-- Application JavaScript with Real-Time Cloud Sync -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -1169,9 +1166,7 @@
                 nameEn: 'Doctors & Clinics',
                 icon: 'fa-solid fa-user-doctor',
                 hasBooking: true,
-                subCategories: [
-                    { id: 'dr_omar', name: 'عيادة د. عمر عبدالقادر', nameEn: 'Dr. Omar Abdelkader Clinic', hasBooking: true }
-                ]
+                subCategories: []
             },
             {
                 id: 'medicines',
@@ -1248,7 +1243,7 @@
         ];
 
         let defaultItems = [
-            { id: 1, type: 'directory', mainCatId: 'health', subCatId: 'dr_omar', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [], ratings: [5, 4, 5] },
+            { id: 1, type: 'directory', mainCatId: 'health', subCatId: 'direct', name: 'عيادة الدكتور عمر عبدالقادر', phone: '01011223344', whatsapp: '201011223344', address: 'شارع المركز الرئيسي بجوار المعمل - دروة', status: 'approved', isDoctorClinic: true, pinCode: '5678', bookings: [], ratings: [5, 4, 5] },
             { id: 2, type: 'directory', mainCatId: 'medicines', subCatId: 'all_pharma', name: 'صيدلية د. مصطفى دروة', phone: '01012345678', whatsapp: '201012345678', address: 'شارع المركز الرئيسي - دروة', status: 'approved', ratings: [5, 5] },
             { id: 3, type: 'directory', mainCatId: 'transport', subCatId: 'cairo_buses', name: 'كابتن محمود السائق (خط القاهرة)', phone: '01098765432', whatsapp: '201098765432', address: 'موقف دروة - خط القاهرة', status: 'approved', pinCode: '1234', bookedSeats: 0, maxSeats: 14, currentTripDirection: 'من دروة إلى القاهرة', passengersList: [], ratings: [4, 5, 4] }
         ];
@@ -1275,8 +1270,8 @@
         let remoteSeenCats = false;
         let lastReseedTime = 0;
         let deletedRecords = { items: [], offers: [], jobs: [], cats: [] };
-        const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v8';
-        const subCategoryPaginationState = {}; // تتبع حد العرض (Pagination) لكل بند فرعي
+        const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v9';
+        const subCategoryPaginationState = {};
 
         function formatEgyptWhatsApp(rawPhone) {
             if (!rawPhone) return '';
@@ -1523,15 +1518,11 @@
                                     refreshAllViews();
                                     ensureAllOfferImagesLoaded();
                                 }
-                            }, (err) => {
-                                console.warn("Firestore listener error:", err);
-                            });
+                            }, (err) => {});
                         }
                     });
                 }
-            } catch (e) {
-                console.warn("Firebase init fallback to Live Relay:", e);
-            }
+            } catch (e) {}
         }
 
         function applyRemoteOperation(opObj) {
@@ -1697,9 +1688,7 @@
                         supervisorsJson: JSON.stringify(supervisors),
                         deletedJson: JSON.stringify(deletedRecords)
                     });
-                } catch (e) {
-                    console.warn("Firestore write error:", e);
-                }
+                } catch (e) {}
             }
 
             try {
@@ -1726,9 +1715,7 @@
                     headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
                     body: bodyStr
                 });
-            } catch (e) {
-                console.warn("Live relay post error:", e);
-            }
+            } catch (e) {}
         }
 
         async function pollCloudMessages(sinceParam = 'all') {
@@ -1771,9 +1758,7 @@
                         }
                     } catch (err) {}
                 };
-            } catch (e) {
-                console.warn("SSE connection error:", e);
-            }
+            } catch (e) {}
 
             setInterval(() => {
                 loadFromPersistentCloudStore();
@@ -1832,7 +1817,7 @@
             const now = new Date();
             let changed = false;
             dbItems.forEach(item => {
-                if ((item.isDoctorClinic || item.mainCatId === 'health') && item.bookings && item.bookings.length > 0) {
+                if (item.bookings && item.bookings.length > 0) {
                     const beforeLen = item.bookings.length;
                     item.bookings = item.bookings.filter(b => {
                         const bookingDate = new Date(b.date + 'T23:59:59');
@@ -1945,10 +1930,13 @@
             document.getElementById('statActiveOffers').innerText = approvedOffers.length;
 
             const offersBadge = document.getElementById('homeOffersCountBadge');
-            if (offersBadge) offersBadge.innerText = `${approvedOffers.length} عرض ساري`;
+            if (offersBadge) offersBadge.innerText = `${approvedOffers.length} عرض`;
 
             const jobsBadge = document.getElementById('homeJobsCountBadge');
-            if (jobsBadge) jobsBadge.innerText = `${approvedJobs.length} وظيفة متاحة`;
+            if (jobsBadge) jobsBadge.innerText = `${approvedJobs.length} وظيفة`;
+
+            const adminBadge = document.getElementById('homeAdminCountBadge');
+            if (adminBadge) adminBadge.innerText = `مفعل`;
 
             grid.innerHTML = dbCategories.map(cat => {
                 const count = approvedItems.filter(i => i.mainCatId === cat.id).length;
@@ -2032,7 +2020,6 @@
             `}).join('');
         }
 
-        // فتح القسم الرئيسي وعرض البنود الفرعية فقط أولاً
         function openCategoryDetail(catId) {
             const cat = dbCategories.find(c => c.id === catId);
             if (!cat) return;
@@ -2043,13 +2030,11 @@
             const subCategories = cat.subCategories || [];
 
             if (subCategories.length === 0) {
-                // إذا لم يكن هناك بنود فرعية، اعرض الجهات مباشرة
                 renderSubCategoryItemsHTML(cat.id, 'direct', cat.name, container);
                 document.getElementById('categoryDetailModal').classList.remove('hidden');
                 return;
             }
 
-            // عرض بطاقات البنود الفرعية أولاً كما طلبت
             html += `<div class="space-y-3"><p class="text-xs text-slate-400 font-bold mb-2">اختر البند الفرعي لتصفح الجهات والخدمات المسجلة:</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
             subCategories.forEach(sub => {
                 const subCount = dbItems.filter(i => i.type === 'directory' && i.mainCatId === cat.id && i.subCatId === sub.id && i.status === 'approved').length;
@@ -2074,17 +2059,16 @@
             document.getElementById('categoryDetailModal').classList.remove('hidden');
         }
 
-        // عرض الجهات داخل البند الفرعي مع دعم زر "عرض المزيد" إذا زادت عن 15 شخصاً
         function renderSubCategoryItemsHTML(mainCatId, subCatId, subTitle, containerEl) {
             const cat = dbCategories.find(c => c.id === mainCatId);
             const subCatObj = cat ? (cat.subCategories || []).find(s => s.id === subCatId) : null;
-            const hasBookingFeature = (cat && cat.hasBooking) || (subCatObj && subCatObj.hasBooking) || mainCatId === 'health' || mainCatId === 'transport';
+            const hasBookingFeature = (cat && cat.hasBooking) || (subCatObj && subCatObj.hasBooking);
 
             const subItems = dbItems.filter(i => i.type === 'directory' && i.mainCatId === mainCatId && (subCatId === 'direct' || i.subCatId === subCatId) && i.status === 'approved');
             
             const paginationKey = `${mainCatId}_${subCatId}`;
             if (subCategoryPaginationState[paginationKey] === undefined) {
-                subCategoryPaginationState[paginationKey] = 15; // العرض الافتراضي أول 15 جهة
+                subCategoryPaginationState[paginationKey] = 15;
             }
             const currentLimit = subCategoryPaginationState[paginationKey];
             const visibleItems = subItems.slice(0, currentLimit);
@@ -2116,6 +2100,8 @@
                     const starsHtml = ratings.length > 0 ? '★'.repeat(Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) + '☆'.repeat(5 - Math.round(ratings.reduce((a, b) => a + b, 0) / ratings.length)) : '☆☆☆☆☆';
                     const waNumber = formatEgyptWhatsApp(item.whatsapp || item.phone);
 
+                    const isTransportCat = mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya'].includes(subCatId);
+
                     html += `
                         <div class="bg-cardBg border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between space-y-2 shadow">
                             <div class="flex justify-between items-start">
@@ -2136,8 +2122,8 @@
                                 <button onclick="rateService(${item.id}, 4)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
                                 <button onclick="rateService(${item.id}, 5)" class="text-slate-500 hover:text-amber-400 px-1 text-sm">★</button>
                             </div>
-                            ${(mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses'].includes(subCatId)) ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز مقعد</button></div></div>` : ''}
-                            ${hasBookingFeature && mainCatId !== 'transport' ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">الحجوزات:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
+                            ${isTransportCat ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]"><div class="text-primary font-bold">اتجاه السير: ${tripDir}</div><div class="flex justify-between items-center"><div><span class="text-slate-400">الحجز:</span> <span class="font-bold text-primary">${booked} محجوز</span> / <span class="text-amber-400">${remaining} متبقي</span></div><button onclick="openBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز مقعد</button></div></div>` : ''}
+                            ${hasBookingFeature && !isTransportCat ? `<div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]"><div><span class="text-slate-400">الحجوزات:</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} مسجل</span></div><button onclick="openDoctorBookingModal(${item.id})" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">حجز موعد</button></div>` : ''}
                             <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب</a>` : ''}</div>
                         </div>
                     `;
@@ -2331,7 +2317,7 @@
                     const img = new Image();
                     img.onload = function() {
                         const canvas = document.createElement('canvas');
-                        let maxDim = 550;
+                        let maxDim = 800;
                         let w = img.width, h = img.height;
                         if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
                         else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
@@ -2341,7 +2327,7 @@
                         ctx.imageSmoothingEnabled = true;
                         ctx.imageSmoothingQuality = 'high';
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        let dataUrl = canvas.toDataURL('image/jpeg', 0.76);
+                        let dataUrl = canvas.toDataURL('image/jpeg', 0.85);
                         document.getElementById('offerImageBase64').value = dataUrl;
                         const prevBox = document.getElementById('offerImagePreviewBox');
                         const prevEl = document.getElementById('offerImagePreviewEl');
@@ -2395,9 +2381,9 @@
             const newId = Date.now();
             const cat = dbCategories.find(c => c.id === mainCatId);
             const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === subCatId) : null;
-            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || mainCatId === 'health' || mainCatId === 'transport';
+            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking);
 
-            const newItem = { id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: 'pending', isDoctorClinic: needsBooking, bookings: [], ratings: [], pinCode: needsBooking ? '5678' : '1234' };
+            const newItem = { id: newId, type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: 'pending', isDoctorClinic: needsBooking, bookings: [], ratings: [], pinCode: needsBooking ? '5678' : '' };
             dbItems.push(newItem);
             syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
             document.getElementById('joinName').value = '';
@@ -2583,9 +2569,17 @@
 
         function renderAdminPinsTable() {
             const container = document.getElementById('adminPinsTableContainer');
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId));
-            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد عيادات أو مواصلات مسجلة</p>`; return; }
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">القسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">${p.isDoctorClinic || p.mainCatId === 'health' ? 'عيادة وطبيب' : 'مواصلات وموقف'}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
+            // تصفية الجهات التي ينتمي مسؤولوها لبند مفعل له زر الحجز
+            const providers = dbItems.filter(i => {
+                if (i.status !== 'approved') return false;
+                const cat = dbCategories.find(c => c.id === i.mainCatId);
+                const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === i.subCatId) : null;
+                const hasBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport';
+                return hasBooking;
+            });
+
+            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد جهات مسجلة تحت بند مفعل له زر الحجز</p>`; return; }
+            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم / الجهة</th><th class="p-3">القسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3 text-slate-400">بند ذو حجز</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '1234'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin(${p.id})" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg transition shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
         }
 
         function updateProviderPin(itemId) {
@@ -2602,16 +2596,22 @@
         function initProviderDashboard() {
             const container = document.getElementById('providerDashboardContent');
             const selDropdown = document.getElementById('providerSelectDropdown');
-            const providers = dbItems.filter(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId));
+            const providers = dbItems.filter(i => {
+                if (i.status !== 'approved') return false;
+                const cat = dbCategories.find(c => c.id === i.mainCatId);
+                const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === i.subCatId) : null;
+                const hasBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport';
+                return hasBooking;
+            });
             
             if (providers.length === 0) { 
-                if (selDropdown) selDropdown.innerHTML = `<option value="">لا توجد عيادات أو مواصلات مسجلة</option>`; 
+                if (selDropdown) selDropdown.innerHTML = `<option value="">لا توجد جهات مسجلة ذات حجز</option>`; 
                 container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد جهات مسجلة حالياً</p>`; 
                 return; 
             }
 
             if (selDropdown) {
-                selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (${p.isDoctorClinic || p.mainCatId === 'health' ? 'عيادة' : 'مواصلات'})</option>`).join('');
+                selDropdown.innerHTML = `<option value="">-- اختر عيادتك أو خط سيرك --</option>` + providers.map(p => `<option value="${p.id}">${p.name} (ذو حجز)</option>`).join('');
             }
 
             if (!loggedInProviderSession) {
@@ -2660,10 +2660,17 @@
             const enteredPin = document.getElementById('providerGlobalPinInput').value.trim();
             if (!enteredPin) { showAlert('خطأ', 'أدخل الكود السري أولاً.', false); return; }
 
-            const matchedProvider = dbItems.find(i => i.status === 'approved' && (i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya', 'tuk_tuks'].includes(i.subCatId)) && !['medicines', 'shops', 'all_pharma', 'supermarket', 'clothes'].includes(i.subCatId) && (i.pinCode === enteredPin || (!i.pinCode && enteredPin === ((i.isDoctorClinic || i.mainCatId === 'health') ? '5678' : '1234'))));
+            const matchedProvider = dbItems.find(i => {
+                if (i.status !== 'approved') return false;
+                const cat = dbCategories.find(c => c.id === i.mainCatId);
+                const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === i.subCatId) : null;
+                const hasBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || i.isDoctorClinic || i.mainCatId === 'health' || i.mainCatId === 'transport';
+                if (!hasBooking) return false;
+                return (i.pinCode === enteredPin || (!i.pinCode && enteredPin === '5678'));
+            });
 
             if (!matchedProvider) {
-                showAlert('خطأ', 'الكود السري غير صحيح أو غير مخصص لمزيد من الخدمات.', false);
+                showAlert('خطأ', 'الكود السري غير صحيح أو غير مخصص لمثل هذه الخدمات.', false);
                 return;
             }
 
@@ -2678,7 +2685,7 @@
             const item = dbItems.find(i => i.id === itemId);
             if (!item) return;
 
-            const correctPin = item.pinCode || ((item.isDoctorClinic || item.mainCatId === 'health') ? '5678' : '1234');
+            const correctPin = item.pinCode || '5678';
             if (enteredPin !== correctPin) {
                 showAlert('خطأ', 'الكود السري غير صحيح.', false);
                 return;
@@ -2692,14 +2699,15 @@
         function renderActiveProviderDashboard(item) {
             const container = document.getElementById('providerDashboardContent');
             const todayStr = new Date().toISOString().split('T')[0];
+            const isTransportCat = item.mainCatId === 'transport' || ['cairo_buses', 'minya_buses', 'new_minya_buses', 'microbuses', 'tamanya'].includes(item.subCatId);
 
-            if (item.isDoctorClinic || item.mainCatId === 'health') {
+            if (!isTransportCat) {
                 const todayB = (item.bookings || []).filter(b => b.date === todayStr);
                 container.innerHTML = `
                     <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
                         <div>
                             <h4 class="font-bold text-sm text-primary">${item.name} (صفحتك الخاصة)</h4>
-                            <p class="text-[11px] text-slate-400 mt-0.5">حجوزات المرضى اليوم: <span class="text-white font-bold">${todayB.length} مريض</span></p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">حجوزات اليوم: <span class="text-white font-bold">${todayB.length} مسجل</span></p>
                         </div>
                         <div class="flex items-center space-x-2 space-x-reverse">
                             <button onclick="clearClinicBookings(${item.id})" class="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-xl font-bold text-[11px]">تصفير كشف اليوم</button>
@@ -2707,24 +2715,24 @@
                         </div>
                     </div>
                     <div class="space-y-2 pt-2">
-                        ${todayB.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات لعيادتك اليوم</p>' : todayB.map((b, i) => `
+                        ${todayB.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات اليوم</p>' : todayB.map((b, i) => `
                             <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
-                                <div>
+                               <div>
                                     <p class="font-bold text-slate-200"><span class="text-primary ml-1">#${i+1}</span> ${b.name}</p>
-                                    <p class="text-[10px] text-slate-400 font-mono">هاتف المريض: ${b.phone}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono">الهاتف: ${b.phone}</p>
                                 </div>
-                                <a href="tel:${b.phone}" class="px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-bold text-[10px]">اتصال بالمريض</a>
+                                <a href="tel:${b.phone}" class="px-2.5 py-1 bg-primary/10 text-primary rounded-lg font-bold text-[10px]">اتصال</a>
                             </div>
                         `).join('')}
                     </div>
                 `;
             } else {
-                const booked = item.bookedSeats || 0;
+                const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
                 const max = item.maxSeats || 14;
                 const todayP = (item.passengersList || []).filter(p => p.date === todayStr);
-                const currentDir = item.currentTripDirection || (item.subCatId === 'minya_buses' ? 'من دروة إلى المنيا' : 'من دروة إلى القاهرة');
+                const currentDir = item.currentTripDirection || 'من دروة إلى الوجهة';
                 
-                let dest = 'القاهرة';
+                let dest = 'الوجهة';
                 if (item.subCatId === 'minya_buses') dest = 'المنيا';
                 else if (item.subCatId === 'new_minya_buses') dest = 'المنيا الجديدة';
                 else if (item.subCatId === 'cairo_buses') dest = 'القاهرة';
@@ -2733,14 +2741,14 @@
                     <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
                         <div class="flex justify-between items-start">
                             <div>
-                                <h4 class="font-bold text-sm text-amber-400">${item.name} (صفحة السائق الخاصة)</h4>
-                                <p class="text-[11px] text-slate-400 mt-1">الاتجاه الحالي لنقلتك: <span class="text-primary font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${currentDir}</span></p>
+                                <h4 class="font-bold text-sm text-amber-400">${item.name} (لوحة السائق)</h4>
+                                <p class="text-[11px] text-slate-400 mt-1">الاتجاه الحالي: <span class="text-primary font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">${currentDir}</span></p>
                                 <p class="text-[11px] text-slate-400 mt-1">المقاعد المحجوزة اليوم: <span class="text-amber-400 font-bold">${booked} مقعد</span> / ${max}</p>
                             </div>
                             <button onclick="logoutProviderSession()" class="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg font-bold text-[10px]">خروج</button>
                         </div>
                         <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2">
-                            <label class="block text-slate-300 font-bold text-[11px]">اختر اتجاه النقلة الجديدة (تصفير وبدء دورة سحابية):</label>
+                            <label class="block text-slate-300 font-bold text-[11px]">اختر اتجاه النقلة الجديدة:</label>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <button onclick="resetDriverSeatsWithDir(${item.id}, 'من دروة إلى ${dest}')" class="py-2 px-3 bg-primary text-slate-950 font-bold rounded-lg text-xs">من دروة إلى ${dest}</button>
                                 <button onclick="resetDriverSeatsWithDir(${item.id}, 'من ${dest} إلى دروة')" class="py-2 px-3 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs">من ${dest} إلى دروة (العودة)</button>
@@ -2751,10 +2759,10 @@
                         ${todayP.length === 0 ? '<p class="text-center text-slate-500 py-4">لا توجد حجوزات ركاب لخط سيرك اليوم</p>' : todayP.map((p, i) => `
                             <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center">
                                 <div>
-                                    <p class="font-bold text-slate-200"><span class="text-amber-400 ml-1">#${i+1}</span> ${p.name} <span class="bg-primary/15 text-primary px-2 py-0.5 rounded-full text-[10px] mr-1">${p.seats} مقعد</span> <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">${p.direction || currentDir}</span></p>
+                                    <p class="font-bold text-slate-200"><span class="text-amber-400 ml-1">#${i+1}</span> ${p.name} <span class="bg-primary/15 text-primary px-2 py-0.5 rounded-full text-[10px] mr-1">${p.seats} مقعد</span></p>
                                     <p class="text-[10px] text-slate-400 font-mono">هاتف الراكب: ${p.phone}</p>
                                 </div>
-                                <a href="tel:${p.phone}" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg font-bold text-[10px]">اتصال بالراكب</a>
+                                <a href="tel:${p.phone}" class="px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg font-bold text-[10px]">اتصال</a>
                             </div>
                         `).join('')}
                     </div>
@@ -2765,7 +2773,7 @@
         function logoutProviderSession() {
             loggedInProviderSession = null;
             initProviderDashboard();
-            showAlert('خروج', 'تم تسجيل خروج صفحة الطبيب / السائق بنجاح.');
+            showAlert('خروج', 'تم تسجيل خروج اللوحة بنجاح.');
         }
 
         function clearClinicBookings(docId) {
@@ -2775,7 +2783,7 @@
             item.bookings = (item.bookings || []).filter(b => b.date !== todayStr);
             syncWithCloud({ op: 'ITEM_UPSERT', item });
             initProviderDashboard();
-            showAlert('تم التصفير', 'تم تصفير كشف حجوزات العيادة اليومية سحابياً.');
+            showAlert('تم التصفير', 'تم تصفير كشف الحجوزات اليومية سحابياً.');
         }
 
         function resetDriverSeatsWithDir(driverId, directionName) {
@@ -2810,17 +2818,26 @@
                     subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
                 }
             }
+            onAdminSubCatChange();
         }
 
         function onAdminMainCatChange() {
             populateAdmSubCats();
+        }
+
+        function onAdminSubCatChange() {
             const mainId = document.getElementById('admFormMainCat').value;
+            const subId = document.getElementById('admFormSubCat').value;
             const cat = dbCategories.find(c => c.id === mainId);
+            const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === subId) : null;
+            
             const pinWrapper = document.getElementById('admPinWrapper');
-            const needsBooking = (cat && cat.hasBooking) || mainId === 'health' || mainId === 'transport';
+            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking);
+
             if (needsBooking) {
                 pinWrapper.classList.remove('hidden');
                 document.getElementById('admFormPin').required = true;
+                if (!document.getElementById('admFormPin').value) document.getElementById('admFormPin').value = '5678';
             } else {
                 pinWrapper.classList.add('hidden');
                 document.getElementById('admFormPin').required = false;
@@ -2840,9 +2857,9 @@
             
             const cat = dbCategories.find(c => c.id === mainCatId);
             const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === subCatId) : null;
-            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || mainCatId === 'health' || mainCatId === 'transport';
+            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking);
 
-            let pinCode = needsBooking ? '5678' : '1234';
+            let pinCode = needsBooking ? '5678' : '';
             const pinInput = document.getElementById('admFormPin');
             if (needsBooking && pinInput && pinInput.value.trim()) {
                 pinCode = pinInput.value.trim();
@@ -2887,7 +2904,20 @@
             document.getElementById('editItemPhone').value = item.phone || '';
             document.getElementById('editItemWhatsapp').value = item.whatsapp || '';
             document.getElementById('editItemAddress').value = item.address || '';
-            document.getElementById('editItemPin').value = item.pinCode || '1234';
+            
+            const cat = dbCategories.find(c => c.id === item.mainCatId);
+            const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === item.subCatId) : null;
+            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || item.isDoctorClinic;
+
+            const editPinWrapper = document.getElementById('editPinWrapper');
+            if (needsBooking) {
+                editPinWrapper.classList.remove('hidden');
+                document.getElementById('editItemPin').value = item.pinCode || '5678';
+            } else {
+                editPinWrapper.classList.add('hidden');
+                document.getElementById('editItemPin').value = '';
+            }
+
             document.getElementById('adminEditItemModal').classList.remove('hidden');
         }
 
@@ -2924,12 +2954,18 @@
             const waInput = document.getElementById('editItemWhatsapp').value.trim();
             item.whatsapp = formatEgyptWhatsApp(waInput || item.phone);
             item.address = document.getElementById('editItemAddress').value.trim();
-            const pinVal = document.getElementById('editItemPin').value.trim();
-            if (pinVal) item.pinCode = pinVal;
-
+            
             const cat = dbCategories.find(c => c.id === item.mainCatId);
             const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === item.subCatId) : null;
-            item.isDoctorClinic = (cat && cat.hasBooking) || (sub && sub.hasBooking) || item.mainCatId === 'health' || item.mainCatId === 'transport';
+            const needsBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking);
+            item.isDoctorClinic = needsBooking;
+
+            if (needsBooking) {
+                const pinVal = document.getElementById('editItemPin').value.trim();
+                if (pinVal) item.pinCode = pinVal;
+            } else {
+                item.pinCode = '';
+            }
 
             syncWithCloud({ op: 'ITEM_UPSERT', item });
             closeAdminEditItemModal();
@@ -3065,14 +3101,21 @@
                 container.innerHTML = `<p class="text-center text-slate-500 py-3 text-xs">لا توجد جهات أو أفراد مسجلين</p>`;
                 return;
             }
-            container.innerHTML = approvedItems.map(item => `
+            container.innerHTML = approvedItems.map(item => {
+                const cat = dbCategories.find(c => c.id === item.mainCatId);
+                const sub = cat && cat.subCategories ? cat.subCategories.find(s => s.id === item.subCatId) : null;
+                const hasBooking = (cat && cat.hasBooking) || (sub && sub.hasBooking) || item.isDoctorClinic;
+
+                return `
                 <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 space-y-2 text-xs">
                     <div class="flex flex-wrap justify-between items-center gap-2">
                         <span class="font-bold text-white">${item.name}</span>
                         <div class="flex items-center space-x-1.5 space-x-reverse">
-                            <span class="text-[10px] text-slate-400">PIN:</span>
-                            <input type="text" maxlength="4" id="dirItemPin_${item.id}" value="${item.pinCode || '1234'}" class="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-primary font-bold">
-                            <button onclick="updateDirItemPin(${item.id})" class="px-2 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px]">حفظ الرمز</button>
+                            ${hasBooking ? `
+                                <span class="text-[10px] text-slate-400">PIN:</span>
+                                <input type="text" maxlength="4" id="dirItemPin_${item.id}" value="${item.pinCode || '1234'}" class="w-16 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-primary font-bold">
+                                <button onclick="updateDirItemPin(${item.id})" class="px-2 py-1 bg-blue-600 text-white rounded-lg font-bold text-[10px]">حفظ الرمز</button>
+                            ` : ''}
                             <button onclick="openAdminEditItemModal(${item.id})" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 rounded-lg font-bold transition text-[10px]"><i class="fa-solid fa-pen ml-1"></i>تعديل البيانات</button>
                             <button onclick="deleteDirItem(${item.id})" class="px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white rounded-lg font-bold transition text-[10px]"><i class="fa-solid fa-trash"></i></button>
                         </div>
@@ -3082,7 +3125,8 @@
                         <span>العنوان: ${item.address}</span>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function updateDirItemPin(itemId) {
@@ -3310,14 +3354,8 @@
                 statLabelCats: isEn ? 'Categories' : 'قسم',
                 statLabelServices: isEn ? 'Registered Services' : 'خدمة مسجلة',
                 bannerAdminMsgTitle: isEn ? 'Admin Announcements' : 'رسائل الإدارة',
-                bannerAdminMsgDesc: isEn ? 'View latest village announcements and updates' : 'لا توجد رسائل من الإدارة حالياً',
-                viewAllText1: isEn ? 'View All' : 'عرض الكل',
                 bannerOffersTitle: isEn ? 'Village Store Offers' : 'عروض داخل القرية',
-                bannerOffersDesc: isEn ? 'Browse verified local shop discounts & offers' : 'لا توجد عروض منشورة حالياً',
-                viewAllText2: isEn ? 'View All' : 'عرض الكل',
                 bannerJobsTitle: isEn ? 'Village Job Opportunities' : 'وظائف داخل القرية',
-                bannerJobsDesc: isEn ? 'Available local jobs for Derwa residents' : 'لا توجد وظائف منشورة حالياً',
-                viewAllText3: isEn ? 'View All' : 'عرض الكل',
                 directoryTitle: isEn ? 'Directory Categories' : 'أقسام الدليل',
                 directorySubtitle: isEn ? 'Browse by category & service' : 'تصفح حسب التصنيف والبنود',
                 bannerJoinTitle: isEn ? 'Add Yourself to the Directory' : 'أضف نفسك للدليل',
@@ -3326,7 +3364,7 @@
                 bannerJobsMainDesc: isEn ? 'Jobs in local shops and businesses for Derwa youth' : 'وظائف المحلات والمصالح لأبناء دروة',
                 bannerContactTitle: isEn ? 'Contact Administration' : 'تواصل مع الإدارة',
                 bannerContactDesc: isEn ? 'Inquiries, suggestions, or data correction' : 'استفسار، اقتراح، أو تصحيح بيانات',
-                appVersionBadge: isEn ? 'Derwa Smart Village v3.4 (Code 12 - Permanent Cloud)' : 'الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.4 (رمز رقم 12 - سحابي مركزي دائم)',
+                appVersionBadge: isEn ? 'Derwa Smart Village v3.5 (Code 13 - Permanent Cloud)' : 'الدليل الذكى لقرية دروة مركز ملوى الإصدار 3.5 (رمز رقم 13 - سحابي مركزي دائم)',
                 offersHeaderTitle: isEn ? 'Village Store Offers' : 'عروض داخل القرية',
                 offersHeaderSub: isEn ? 'Commercial store offers with photos, verified by Admin' : 'عروض المحلات التجارية مع الصور، معتمدة من الإدارة',
                 addOfferBtnText: isEn ? 'Add Offer (With Photo)' : 'أضف عرضك (مع صورة)',
@@ -3352,7 +3390,7 @@
                 menuPrivacyText: isEn ? 'Privacy Policy' : 'سياسة الخصوصية',
                 menuContactText: isEn ? 'Contact Administration' : 'تواصل مع الإدارة',
                 menuShareText: isEn ? 'Share App' : 'مشاركة التطبيق',
-                menuProviderDashText: isEn ? 'Doctors & Drivers Dashboard (Manage Bookings)' : 'لوحة تحكم الأطباء والسائقين (إدارة الحجوزات)',
+                menuProviderDashText: isEn ? 'Booking-Enabled Categories Dashboard (Manage Bookings)' : 'لوحة التحكم للبنود ذات الحجز (إدارة المواعيد والركاب)',
                 menuAdminLoginText: isEn ? 'Standalone Admin Services Login' : 'دخول صفحة خدمات المسؤول المستقلة',
                 menuSupervisorLoginText: isEn ? 'Supervisors Login (Phone & PIN)' : 'دخول المشرفين (برقم التليفون والـ PIN)',
                 navText_home: isEn ? 'Home' : 'الرئيسية',
@@ -3427,7 +3465,7 @@
             openSupervisorLoginModal, closeSupervisorLoginModal, verifySupervisorLogin,
             renderProviderDashboard, initProviderDashboard, verifyProviderGlobalPin, verifySpecificProviderPin,
             logoutProviderSession, clearClinicBookings, resetDriverSeatsWithDir, switchAdminSubTab,
-            openAdminAddServiceModal, closeAdminAddServiceModal, onAdminMainCatChange, adminSaveServiceDirectly,
+            openAdminAddServiceModal, closeAdminAddServiceModal, onAdminMainCatChange, onAdminSubCatChange, adminSaveServiceDirectly,
             openAddCategoryModal, closeAddCategoryModal, toggleCatParentSelect, saveNewCategory,
             addNewSupervisor, updateSupervisorPin, deleteSupervisor, closeCategoryModal, openCategoryDetail, rateService,
             openAdminAddItemToSub, openBookingModal, closeBookingModal, confirmBooking, openDoctorBookingModal,
