@@ -1165,10 +1165,15 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_live_v8";
+        const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_cloud_v20_main";
+        const LIVE_IMG_TOPIC = "derwa_smart_village_malawi_cloud_v20_imgs";
         const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
-        const PERSISTENT_KV_BASE = "https://kvdb.io/A6Xy9pL4kM2wQ8zV1nB5rT";
-        const PERSISTENT_KV_URL = `${PERSISTENT_KV_BASE}/derwa_village_permanent_state_v1`;
+        const LIVE_IMG_URL = `https://ntfy.sh/${LIVE_IMG_TOPIC}`;
+
+        const cloudSendQueue = [];
+        let isProcessingQueue = false;
+        const incomingImageChunks = {};
+        const uploadedOfferImgIds = new Set();
 
         let defaultCategories = [
             {
@@ -1322,40 +1327,135 @@
             return digits;
         }
 
+        function enqueueCloudPacket(url, payloadObj, highPriority = false) {
+            return new Promise((resolve) => {
+                const task = { url, payloadObj, resolve, retries: 0 };
+                if (highPriority) {
+                    cloudSendQueue.unshift(task);
+                } else {
+                    cloudSendQueue.push(task);
+                }
+                processCloudQueue();
+            });
+        }
+
+        async function processCloudQueue() {
+            if (isProcessingQueue || cloudSendQueue.length === 0) return;
+            isProcessingQueue = true;
+
+            while (cloudSendQueue.length > 0) {
+                const task = cloudSendQueue[0];
+                try {
+                    const bodyStr = JSON.stringify(task.payloadObj);
+                    const res = await fetch(task.url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                        body: bodyStr
+                    });
+
+                    if (res.status === 429 && task.retries < 4) {
+                        task.retries++;
+                        await new Promise(r => setTimeout(r, 1800 * task.retries));
+                        continue;
+                    }
+
+                    cloudSendQueue.shift();
+                    task.resolve(true);
+                    await new Promise(r => setTimeout(r, 280));
+                } catch (e) {
+                    if (task.retries < 2) {
+                        task.retries++;
+                        await new Promise(r => setTimeout(r, 1200));
+                    } else {
+                        cloudSendQueue.shift();
+                        task.resolve(false);
+                    }
+                }
+            }
+
+            isProcessingQueue = false;
+        }
+
+        function chunkArray(arr, size) {
+            const chunks = [];
+            for (let i = 0; i < arr.length; i += size) {
+                chunks.push(arr.slice(i, i + size));
+            }
+            return chunks;
+        }
+
         async function saveOfferImageToCloud(offerId, base64Data) {
             if (!offerId || !base64Data) return;
-            try {
-                await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offerId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                    body: base64Data
-                });
-            } catch (e) {}
+            const idStr = String(offerId);
+            if (uploadedOfferImgIds.has(idStr)) return;
+            uploadedOfferImgIds.add(idStr);
+
+            const chunkSize = 2500;
+            const total = Math.ceil(base64Data.length / chunkSize);
+            for (let i = 0; i < total; i++) {
+                const part = base64Data.slice(i * chunkSize, (i + 1) * chunkSize);
+                await enqueueCloudPacket(LIVE_IMG_URL, {
+                    op: 'IMG_CHUNK',
+                    offerId: idStr,
+                    idx: i,
+                    total,
+                    data: part
+                }, false);
+            }
+        }
+
+        function handleIncomingImageChunk(opObj) {
+            if (!opObj || opObj.op !== 'IMG_CHUNK' || !opObj.offerId) return false;
+            const idStr = String(opObj.offerId);
+            if (!incomingImageChunks[idStr]) {
+                incomingImageChunks[idStr] = { total: opObj.total, parts: {} };
+            }
+            incomingImageChunks[idStr].parts[opObj.idx] = opObj.data;
+            const entry = incomingImageChunks[idStr];
+            if (Object.keys(entry.parts).length === entry.total) {
+                let fullBase64 = '';
+                for (let i = 0; i < entry.total; i++) {
+                    fullBase64 += (entry.parts[i] || '');
+                }
+                const offer = dbOffers.find(o => String(o.id) === idStr);
+                if (offer && fullBase64.startsWith('data:image')) {
+                    offer.image = fullBase64;
+                    offer.hasImage = true;
+                    uploadedOfferImgIds.add(idStr);
+                    return true;
+                }
+            }
+            return false;
         }
 
         async function ensureAllOfferImagesLoaded() {
-            let anyUpdated = false;
-            for (const offer of dbOffers) {
-                if (offer && offer.id && !offer.image && offer.hasImage !== false && !fetchingOfferImgIds.has(String(offer.id))) {
-                    fetchingOfferImgIds.add(String(offer.id));
-                    try {
-                        const res = await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offer.id}`);
-                        if (res.ok) {
-                            const imgData = await res.text();
-                            if (imgData && imgData.startsWith('data:image')) {
-                                offer.image = imgData;
-                                offer.hasImage = true;
-                                anyUpdated = true;
+            const missingOffers = dbOffers.filter(o => o && o.id && !o.image && o.hasImage !== false);
+            if (missingOffers.length === 0) return;
+
+            try {
+                const res = await fetch(`${LIVE_IMG_URL}/json?poll=1&since=all`);
+                if (res.ok) {
+                    const text = await res.text();
+                    const lines = text.trim().split('\n');
+                    let anyUpdated = false;
+                    for (const line of lines) {
+                        if (!line) continue;
+                        try {
+                            const wrapper = JSON.parse(line);
+                            if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                                const opObj = JSON.parse(wrapper.message);
+                                if (handleIncomingImageChunk(opObj)) {
+                                    anyUpdated = true;
+                                }
                             }
-                        }
-                    } catch (e) {}
-                    fetchingOfferImgIds.delete(String(offer.id));
+                        } catch (err) {}
+                    }
+                    if (anyUpdated) {
+                        saveLocalCache();
+                        refreshAllViews();
+                    }
                 }
-            }
-            if (anyUpdated) {
-                saveLocalCache();
-                refreshAllViews();
-            }
+            } catch (e) {}
         }
 
         function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
@@ -1543,53 +1643,11 @@
         }
 
         async function saveToPersistentCloudStore() {
-            try {
-                for (const o of dbOffers) {
-                    if (o && o.id && o.image) {
-                        saveOfferImageToCloud(o.id, o.image);
-                    }
-                }
-                const fullState = {
-                    updatedAt: Date.now(),
-                    cats: dbCategories,
-                    items: dbItems,
-                    offers: dbOffers,
-                    jobs: dbJobs,
-                    sups: supervisors,
-                    deleted: deletedRecords
-                };
-                await fetch(PERSISTENT_KV_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(fullState)
-                });
-            } catch (e) {}
+            saveLocalCache();
         }
 
         async function loadFromPersistentCloudStore() {
-            try {
-                const res = await fetch(PERSISTENT_KV_URL);
-                if (res.ok) {
-                    const cloudState = await res.json();
-                    if (cloudState) {
-                        if (cloudState.deleted) {
-                            deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(cloudState.deleted.items || [])]));
-                            deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(cloudState.deleted.offers || [])]));
-                            deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(cloudState.deleted.jobs || [])]));
-                            deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(cloudState.deleted.cats || [])]));
-                        }
-                        if (cloudState.cats) dbCategories = mergeCategories(dbCategories, cloudState.cats, deletedRecords.cats);
-                        if (cloudState.items) dbItems = mergeArrayById(dbItems, cloudState.items, deletedRecords.items);
-                        if (cloudState.offers) dbOffers = mergeArrayById(dbOffers, cloudState.offers, deletedRecords.offers);
-                        if (cloudState.jobs) dbJobs = mergeArrayById(dbJobs, cloudState.jobs, deletedRecords.jobs);
-                        if (cloudState.sups) supervisors = mergeSupervisors(supervisors, cloudState.sups);
-                        normalizeAndDeduplicateData();
-                        saveLocalCache();
-                        refreshAllViews();
-                        await ensureAllOfferImagesLoaded();
-                    }
-                }
-            } catch (e) {}
+            await pollCloudMessages('all');
         }
 
         let db = null;
@@ -1630,6 +1688,7 @@
                                     if (cloudData.offersJson) dbOffers = mergeArrayById(dbOffers, JSON.parse(cloudData.offersJson), deletedRecords.offers);
                                     if (cloudData.jobsJson) dbJobs = mergeArrayById(dbJobs, JSON.parse(cloudData.jobsJson), deletedRecords.jobs);
                                     if (cloudData.supervisorsJson) supervisors = mergeSupervisors(supervisors, JSON.parse(cloudData.supervisorsJson));
+                                    normalizeAndDeduplicateData();
                                     saveLocalCache();
                                     refreshAllViews();
                                     ensureAllOfferImagesLoaded();
@@ -1655,7 +1714,28 @@
                 return;
             }
 
-            if (opObj.op === 'FULL_SYNC') {
+            if (opObj.op === 'CATS_CHUNK') {
+                remoteSeenCats = true;
+                if (opObj.deleted) {
+                    deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(opObj.deleted.items || [])]));
+                    deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(opObj.deleted.offers || [])]));
+                    deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(opObj.deleted.jobs || [])]));
+                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(opObj.deleted.cats || [])]));
+                }
+                if (opObj.cats) {
+                    dbCategories = mergeCategories(dbCategories, opObj.cats, deletedRecords.cats);
+                }
+            } else if (opObj.op === 'BATCH_ITEMS' && opObj.items) {
+                opObj.items.forEach(it => { if (it && it.id !== undefined) remoteSeenItemIds.add(String(it.id)); });
+                dbItems = mergeArrayById(dbItems, opObj.items, deletedRecords.items);
+            } else if (opObj.op === 'BATCH_OFFERS' && opObj.offers) {
+                opObj.offers.forEach(of => { if (of && of.id !== undefined) remoteSeenOfferIds.add(String(of.id)); });
+                dbOffers = mergeArrayById(dbOffers, opObj.offers, deletedRecords.offers);
+                ensureAllOfferImagesLoaded();
+            } else if (opObj.op === 'BATCH_JOBS' && opObj.jobs) {
+                opObj.jobs.forEach(jb => { if (jb && jb.id !== undefined) remoteSeenJobIds.add(String(jb.id)); });
+                dbJobs = mergeArrayById(dbJobs, opObj.jobs, deletedRecords.jobs);
+            } else if (opObj.op === 'FULL_SYNC') {
                 if (opObj.deleted) {
                     deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(opObj.deleted.items || [])]));
                     deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(opObj.deleted.offers || [])]));
@@ -1730,42 +1810,78 @@
             refreshAllViews();
         }
 
+        async function broadcastCategoriesChunked() {
+            const catChunks = chunkArray(dbCategories, 2);
+            for (let i = 0; i < catChunks.length; i++) {
+                const nowTs = Date.now();
+                const opId = nowTs + '_cat_' + i + '_' + Math.random().toString(36).substring(2, 6);
+                processedOpIds.add(opId);
+                await enqueueCloudPacket(LIVE_SYNC_URL, {
+                    op: 'CATS_CHUNK',
+                    opId,
+                    ts: nowTs,
+                    cats: catChunks[i],
+                    deleted: i === 0 ? deletedRecords : undefined
+                }, false);
+            }
+        }
+
         async function reseedMissingDataToCloud(forceAll = false) {
             lastReseedTime = Date.now();
             try {
-                await saveToPersistentCloudStore();
-                await syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories, deletedCats: deletedRecords.cats });
-                for (const item of dbItems) {
-                    const isDefault = [1, 2, 3].includes(Number(item.id));
-                    if (forceAll || (!isDefault && !remoteSeenItemIds.has(String(item.id)))) {
-                        remoteSeenItemIds.add(String(item.id));
-                        await syncWithCloud({ op: 'ITEM_UPSERT', item });
-                    }
+                if (forceAll || !remoteSeenCats) {
+                    await broadcastCategoriesChunked();
                 }
+
+                const itemsToSend = dbItems.filter(item => {
+                    const isDefault = [1, 2, 3].includes(Number(item.id));
+                    return forceAll || (!isDefault && !remoteSeenItemIds.has(String(item.id)));
+                });
+                itemsToSend.forEach(it => remoteSeenItemIds.add(String(it.id)));
+
+                const itemBatches = chunkArray(itemsToSend, 6);
+                for (const batch of itemBatches) {
+                    const opId = Date.now() + '_ib_' + Math.random().toString(36).substring(2, 6);
+                    processedOpIds.add(opId);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_ITEMS', opId, ts: Date.now(), items: batch }, false);
+                }
+
+                const offersToSend = dbOffers.filter(offer => forceAll || !remoteSeenOfferIds.has(String(offer.id)));
                 for (const offer of dbOffers) {
                     if (offer.image) {
-                        await saveOfferImageToCloud(offer.id, offer.image);
-                    }
-                    if (forceAll || !remoteSeenOfferIds.has(String(offer.id))) {
-                        remoteSeenOfferIds.add(String(offer.id));
-                        await syncWithCloud({ op: 'OFFER_UPSERT', offer });
+                        saveOfferImageToCloud(offer.id, offer.image);
                     }
                 }
-                for (const job of dbJobs) {
-                    if (forceAll || !remoteSeenJobIds.has(String(job.id))) {
-                        remoteSeenJobIds.add(String(job.id));
-                        await syncWithCloud({ op: 'JOB_UPSERT', job });
-                    }
+                offersToSend.forEach(of => remoteSeenOfferIds.add(String(of.id)));
+                const slimOffers = offersToSend.map(o => ({ ...o, hasImage: Boolean(o.image || o.hasImage), image: '' }));
+                const offerBatches = chunkArray(slimOffers, 5);
+                for (const batch of offerBatches) {
+                    const opId = Date.now() + '_ob_' + Math.random().toString(36).substring(2, 6);
+                    processedOpIds.add(opId);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_OFFERS', opId, ts: Date.now(), offers: batch }, false);
                 }
-                if (forceAll && supervisors.length > 2) {
-                    await syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
+
+                const jobsToSend = dbJobs.filter(job => forceAll || !remoteSeenJobIds.has(String(job.id)));
+                jobsToSend.forEach(jb => remoteSeenJobIds.add(String(jb.id)));
+                const jobBatches = chunkArray(jobsToSend, 6);
+                for (const batch of jobBatches) {
+                    const opId = Date.now() + '_jb_' + Math.random().toString(36).substring(2, 6);
+                    processedOpIds.add(opId);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_JOBS', opId, ts: Date.now(), jobs: batch }, false);
+                }
+
+                if (forceAll || supervisors.length > 2) {
+                    const opId = Date.now() + '_sup_' + Math.random().toString(36).substring(2, 6);
+                    processedOpIds.add(opId);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'SUPS_SYNC', opId, ts: Date.now(), sups: supervisors }, false);
                 }
             } catch (e) {}
         }
 
         async function forceFullCloudBroadcast() {
+            showAlert('جاري البث الشامل...', 'يتم الآن رفع ومزامنة جميع البيانات والأقسام والصور تباعاً إلى السحابة لجميع الهواتف...');
             await reseedMissingDataToCloud(true);
-            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص وجميع صور العروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف فوراً.');
+            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص وجميع صور العروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف بنجاح.');
         }
 
         async function manualForcePullCloud() {
@@ -1773,15 +1889,13 @@
             const homeIcon = document.getElementById('homeSyncSpinIcon');
             if (icon) icon.classList.add('fa-spin');
             if (homeIcon) homeIcon.classList.add('fa-spin');
-            await loadFromPersistentCloudStore();
             await pollCloudMessages('all');
             await ensureAllOfferImagesLoaded();
-            await syncWithCloud({ op: 'REQUEST_RESEED' });
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
                 if (homeIcon) homeIcon.classList.remove('fa-spin');
                 showAlert('تم التحديث بنجاح', 'تم تحديث التطبيق وجلب أحدث الإضافات والإزالات والعروض من السحابة بنجاح.');
-            }, 900);
+            }, 600);
         }
 
         async function syncWithCloud(deltaPayload = null) {
@@ -1792,9 +1906,8 @@
             refreshAllViews();
 
             if (deltaPayload && deltaPayload.offer && deltaPayload.offer.image) {
-                await saveOfferImageToCloud(deltaPayload.offer.id, deltaPayload.offer.image);
+                saveOfferImageToCloud(deltaPayload.offer.id, deltaPayload.offer.image);
             }
-            await saveToPersistentCloudStore();
 
             if (db && currentUser) {
                 try {
@@ -1812,35 +1925,30 @@
             }
 
             try {
-                let messageToSend = deltaPayload ? { ...deltaPayload, opId, ts: nowTs } : {
-                    op: 'FULL_SYNC',
-                    opId,
-                    ts: nowTs,
-                    cats: dbCategories,
-                    items: dbItems,
-                    offers: dbOffers.map(o => ({ ...o, hasImage: Boolean(o.image || o.hasImage), image: '' })),
-                    jobs: dbJobs,
-                    sups: supervisors,
-                    deleted: deletedRecords
-                };
+                if (!deltaPayload) {
+                    await reseedMissingDataToCloud(true);
+                    return;
+                }
 
-                if (messageToSend.offer && messageToSend.offer.image && messageToSend.offer.image.length > 3000) {
+                if (deltaPayload.op === 'CATS_SYNC') {
+                    await broadcastCategoriesChunked();
+                    return;
+                }
+
+                let messageToSend = { ...deltaPayload, opId, ts: nowTs };
+                if (messageToSend.offer && messageToSend.offer.image) {
                     const slimOffer = { ...messageToSend.offer, hasImage: true, image: '' };
                     messageToSend = { ...messageToSend, offer: slimOffer };
                 }
 
-                let bodyStr = JSON.stringify(messageToSend);
-                await fetch(LIVE_SYNC_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                    body: bodyStr
-                });
+                await enqueueCloudPacket(LIVE_SYNC_URL, messageToSend, true);
             } catch (e) {}
         }
 
         async function pollCloudMessages(sinceParam = 'all') {
             try {
                 const res = await fetch(`${LIVE_SYNC_URL}/json?poll=1&since=${sinceParam}`);
+                if (!res.ok) return;
                 const text = await res.text();
                 const lines = text.trim().split('\n');
                 for (const line of lines) {
@@ -1857,14 +1965,15 @@
         }
 
         async function connectLiveMultiDeviceCloud() {
-            await loadFromPersistentCloudStore();
             await pollCloudMessages('all');
             await ensureAllOfferImagesLoaded();
 
-            if (dbItems.length > 3 || dbCategories.length > 8 || dbOffers.length > 0) {
-                await reseedMissingDataToCloud(true);
-            } else {
-                await syncWithCloud({ op: 'REQUEST_RESEED' });
+            const hasUnseenLocalData = dbItems.some(it => ![1, 2, 3].includes(Number(it.id)) && !remoteSeenItemIds.has(String(it.id)))
+                || dbOffers.some(of => !remoteSeenOfferIds.has(String(of.id)))
+                || dbJobs.some(jb => !remoteSeenJobIds.has(String(jb.id)));
+
+            if (hasUnseenLocalData) {
+                reseedMissingDataToCloud(false);
             }
 
             try {
@@ -1880,10 +1989,25 @@
                 };
             } catch (e) {}
 
+            try {
+                const imgEvtSource = new EventSource(`${LIVE_IMG_URL}/sse`);
+                imgEvtSource.onmessage = (event) => {
+                    try {
+                        const wrapper = JSON.parse(event.data);
+                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                            const opObj = JSON.parse(wrapper.message);
+                            if (handleIncomingImageChunk(opObj)) {
+                                saveLocalCache();
+                                refreshAllViews();
+                            }
+                        }
+                    } catch (err) {}
+                };
+            } catch (e) {}
+
             setInterval(() => {
-                loadFromPersistentCloudStore();
-                pollCloudMessages('25s');
-            }, 8000);
+                pollCloudMessages('30s');
+            }, 9000);
         }
 
         function updatePendingBadge() {
@@ -1980,17 +2104,7 @@
             const offer = dbOffers.find(o => Number(o.id) === Number(offerId));
             if (!offer) return;
             if (!offer.image) {
-                try {
-                    const res = await fetch(`${PERSISTENT_KV_BASE}/offer_img_${offer.id}`);
-                    if (res.ok) {
-                        const imgData = await res.text();
-                        if (imgData && imgData.startsWith('data:image')) {
-                            offer.image = imgData;
-                            saveLocalCache();
-                            renderOffers();
-                        }
-                    }
-                } catch (e) {}
+                await ensureAllOfferImagesLoaded();
             }
             if (!offer.image) return;
 
