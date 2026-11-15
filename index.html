@@ -1165,8 +1165,8 @@
     <!-- Application JavaScript with User Firebase Cloud Sync -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase Config الخاصة بمهندس محمد محمود اسماعيل
         const firebaseConfig = {
@@ -1177,14 +1177,6 @@
             messagingSenderId: "77427882895",
             appId: "1:77427882895:web:6f6548ee0d8ad6fb803h9a"
         };
-
-        const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_cloud_v20_main";
-        const LIVE_OFFERS_TOPIC = "derwa_smart_village_malawi_cloud_v20_offers";
-        const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
-        const LIVE_OFFERS_URL = `https://ntfy.sh/${LIVE_OFFERS_TOPIC}`;
-
-        const cloudSendQueue = [];
-        let isProcessingQueue = false;
 
         let defaultCategories = [
             {
@@ -1250,7 +1242,7 @@
                     { id: 'dish_tech', name: 'فني دش', nameEn: 'Satellite Technician', hasBooking: false },
                     { id: 'armed_carpenters', name: 'نجارين مسلح', nameEn: 'Formwork Carpenters', hasBooking: false },
                     { id: 'armed_blacksmiths', name: 'حدادين مسلح', nameEn: 'Rebar Blacksmiths', hasBooking: false },
-                    { id: 'electricians', name: 'كهربائيين', nameEn: 'Electricians', hasBooking: false },
+                    { id: 'electric_ians', name: 'كهربائيين', nameEn: 'Electricians', hasBooking: false },
                     { id: 'plumbers', name: 'سباكين', nameEn: 'Plumbers', hasBooking: false },
                     { id: 'masons', name: 'عمال بناء', nameEn: 'Masons & Builders', hasBooking: false },
                     { id: 'plaster_paint', name: 'محارة ونقاشة', nameEn: 'Plastering & Painting', hasBooking: false },
@@ -1308,7 +1300,6 @@
         let pendingEmail = '';
         let currentLang = 'ar';
         let loggedInProviderSession = null;
-        const processedOpIds = new Set();
         let deletedRecords = { items: [], offers: [], jobs: [], cats: [] };
         const LOCAL_STORAGE_KEY = 'derwa_smart_village_cloud_cache_v20';
         const subCategoryPaginationState = {};
@@ -1464,18 +1455,16 @@
                     if (currentUser && db) {
                         const stateDocRef = doc(db, 'artifacts', 'derwa-village-main-store', 'public', 'data', 'store', 'global');
                         
-                        // قراءة فورية لأحدث نسخة من فايربيس
                         try {
                             const snap = await getDoc(stateDocRef);
                             if (snap.exists()) {
                                 applyCloudData(snap.data());
                             } else {
-                                // رفع النسخة الافتتاحية لو السيرفر فاضي
                                 await pushToCloudStore();
                             }
                         } catch (err) {}
 
-                        // الاستماع للتحديثات الحية الفورية من فايربيس لكل الهواتف
+                        // تفعيل الاستماع الفوري الحقيقي Real-time listener
                         onSnapshot(stateDocRef, (docSnap) => {
                             if (docSnap.exists()) {
                                 applyCloudData(docSnap.data());
@@ -1527,15 +1516,6 @@
             saveLocalCache();
             refreshAllViews();
             await pushToCloudStore();
-
-            // إرسال عبر ntfy للتنبيه الفوري للأجهزة الأخرى
-            try {
-                await fetch(LIVE_SYNC_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                    body: JSON.stringify({ ts: Date.now(), op: deltaPayload ? deltaPayload.op : 'SYNC' })
-                });
-            } catch (e) {}
         }
 
         async function forceFullCloudBroadcast() {
@@ -1859,7 +1839,7 @@
             if (!item) return;
             if (!item.ratings) item.ratings = [];
             item.ratings.push(stars);
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
             showAlert('شكراً لك', `تم تسجيل تقييمك (${stars} نجوم) وحفظه سحابياً.`);
         }
 
@@ -1895,7 +1875,7 @@
             item.bookedSeats = (item.bookedSeats || 0) + seatsReq;
             if (!item.passengersList) item.passengersList = [];
             item.passengersList.push({ name: pName, phone: pPhone, seats: seatsReq, date: bDate, direction: bDir });
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
 
             closeBookingModal();
             closeCategoryModal();
@@ -1927,7 +1907,7 @@
 
             if (!item.bookings) item.bookings = [];
             item.bookings.push({ name: patName, phone: patPhone, date: chosenDate });
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
 
             closeDoctorBookingModal();
             closeCategoryModal();
@@ -1974,7 +1954,7 @@
                 const parentCat = dbCategories.find(c => c.id === parentId);
                 if (parentCat) parentCat.subCategories.push({ id: 'sub_' + Date.now(), name, nameEn: name, hasBooking });
             }
-            syncWithCloud({ op: 'CATS_SYNC', cats: dbCategories });
+            syncWithCloud();
             closeAddCategoryModal();
             showAlert('تم الحفظ', 'تمت إضافة البند ومزامنته سحابياً لجميع الأجهزة فوراً.');
         }
@@ -2061,7 +2041,7 @@
             const newItem = { id: Date.now(), type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, status: 'pending', isDoctorClinic: needsBooking, bookings: [], ratings: [], pinCode: needsBooking ? '5678' : '' };
             dbItems.push(newItem);
             normalizeAndDeduplicateData();
-            syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
+            syncWithCloud();
             document.getElementById('joinName').value = '';
             document.getElementById('joinPhone').value = '';
             document.getElementById('joinAddress').value = '';
@@ -2089,7 +2069,7 @@
             const initialStatus = currentLoggedInAdmin ? 'approved' : 'pending';
             const newOffer = { id: Date.now(), type: 'offer', title, store, image, hasImage: Boolean(image), description, phone, status: initialStatus };
             dbOffers.push(newOffer);
-            await syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
+            await syncWithCloud();
             closeAddOfferModal();
             renderOffers();
             showAlert('تم الإرسال', initialStatus === 'approved' ? 'تم نشر العرض وصورته مباشرة لجميع الهواتف.' : 'تم إرسال العرض وصورته إلى صفحة المسؤول للموافقة عليه ونشره.');
@@ -2113,7 +2093,7 @@
             const initialStatus = currentLoggedInAdmin ? 'approved' : 'pending';
             const newJob = { id: Date.now(), type: 'job', title, store, description, phone, status: initialStatus };
             dbJobs.push(newJob);
-            syncWithCloud({ op: 'JOB_UPSERT', job: newJob });
+            syncWithCloud();
             closeAddJobModal();
             renderJobs();
             showAlert('تم الإرسال', initialStatus === 'approved' ? 'تم نشر الوظيفة مباشرة لجميع الهواتف.' : 'تم إرسال الوظيفة للمسؤول للموافقة عليها.');
@@ -2211,7 +2191,7 @@
             const newPin = document.getElementById('pinInput_' + itemId).value.trim();
             if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز السري 4 أرقام.', false); return; }
             const item = dbItems.find(i => i.id === itemId);
-            if (item) { item.pinCode = newPin; syncWithCloud({ op: 'ITEM_UPSERT', item }); showAlert('تم الحفظ', 'تم تحديث الرمز السري ومزامنته سحابياً.'); }
+            if (item) { item.pinCode = newPin; syncWithCloud(); showAlert('تم الحفظ', 'تم تحديث الرمز السري ومزامنته سحابياً.'); }
         }
 
         function initProviderDashboard() {
@@ -2273,7 +2253,7 @@
             if (!item) return;
             const todayStr = new Date().toISOString().split('T')[0];
             item.bookings = (item.bookings || []).filter(b => b.date !== todayStr);
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
             initProviderDashboard();
             showAlert('تم التصفير', 'تم تصفير كشف الحجوزات سحابياً.');
         }
@@ -2284,7 +2264,7 @@
             item.bookedSeats = 0;
             item.passengersList = [];
             item.currentTripDirection = dirName;
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
             initProviderDashboard();
             showAlert('نقلة جديدة', `تم بدء نقلة جديدة باتجاه: (${dirName}) وتصفير المقاعد سحابياً.`);
         }
@@ -2341,7 +2321,7 @@
             const newItem = { id: Date.now(), type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, pinCode, status: 'approved', isDoctorClinic: needsBooking, bookings: [], bookedSeats: 0, maxSeats: 14, passengersList: [], ratings: [] };
             dbItems.push(newItem);
             normalizeAndDeduplicateData();
-            syncWithCloud({ op: 'ITEM_UPSERT', item: newItem });
+            syncWithCloud();
             closeAdminAddServiceModal();
             showAlert('تمت الإضافة', 'تم نشر الجهة ومزامنتها سحابياً على جميع الهواتف فوراً.');
         }
@@ -2381,7 +2361,7 @@
             item.phone = document.getElementById('editItemPhone').value.trim();
             item.whatsapp = formatEgyptWhatsApp(document.getElementById('editItemWhatsapp').value.trim() || item.phone);
             item.address = document.getElementById('editItemAddress').value.trim();
-            syncWithCloud({ op: 'ITEM_UPSERT', item });
+            syncWithCloud();
             closeAdminEditItemModal();
             renderAdminApprovalTable();
             showAlert('تم التعديل', 'تم حفظ التعديلات ومزامنتها سحابياً.');
@@ -2393,7 +2373,7 @@
             const pinCode = document.getElementById('newSuperPin').value.trim();
             if (!name || !phone || pinCode.length !== 4) { showAlert('خطأ', 'أدخل البيانات صحيحة والـ PIN 4 أرقام.', false); return; }
             supervisors.push({ phone, name, role: 'supervisor', pinCode });
-            syncWithCloud({ op: 'SUPS_SYNC', sups: supervisors });
+            syncWithCloud();
             renderSupervisorsList();
             showAlert('تم', 'تم إضافة المشرف ومزامنته سحابياً.');
         }
@@ -2407,13 +2387,13 @@
         function approveSubmission(tableType, id) {
             if (tableType === 'directory') {
                 const item = dbItems.find(i => Number(i.id) === Number(id));
-                if (item) { item.status = 'approved'; syncWithCloud({ op: 'ITEM_UPSERT', item }); }
+                if (item) { item.status = 'approved'; syncWithCloud(); }
             } else if (tableType === 'offer') {
                 const offer = dbOffers.find(o => Number(o.id) === Number(id));
-                if (offer) { offer.status = 'approved'; syncWithCloud({ op: 'OFFER_UPSERT', offer }); }
+                if (offer) { offer.status = 'approved'; syncWithCloud(); }
             } else if (tableType === 'job') {
                 const job = dbJobs.find(j => Number(j.id) === Number(id));
-                if (job) { job.status = 'approved'; syncWithCloud({ op: 'JOB_UPSERT', job }); }
+                if (job) { job.status = 'approved'; syncWithCloud(); }
             }
             renderAdminApprovalTable();
             refreshAllViews();
