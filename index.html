@@ -294,9 +294,6 @@
                         <h3 id="joinHeaderTitle" class="font-extrabold text-xl mb-1">اقتراح إضافة / انضم إلى الدليل</h3>
                         <p id="joinHeaderSub" class="text-xs text-slate-400">سجل بياناتك (الاسم، القسم الرئيسي، الفرعي، العنوان التفصيلي، الهاتف). تخضع للمراجعة قبل الظهور العام.</p>
                     </div>
-                    <button type="button" onclick="pickContactFromDevice()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-primary font-bold rounded-xl text-xs transition flex items-center border border-slate-700 shadow">
-                        <i class="fa-solid fa-address-book ml-1.5"></i> اختيار من جهات الاتصال
-                    </button>
                 </div>
 
                 <form onsubmit="submitJoinDirectly(event)" class="space-y-4 text-xs">
@@ -1982,13 +1979,6 @@
             showAlert('تم الحفظ', 'تمت إضافة البند ومزامنته سحابياً لجميع الأجهزة فوراً.');
         }
 
-        async function pickContactFromDevice() {
-            document.getElementById('joinName').value = 'محمد أحمد';
-            document.getElementById('joinPhone').value = '01011223344';
-            document.getElementById('joinWhatsapp').value = '201011223344';
-            showAlert('اختيار جهة اتصال', 'تم تحميل نموذج تجريبي باسم (محمد أحمد)، يمكنك تعديله مباشرة.');
-        }
-
         function handleOfferImageUpload(e) {
             const file = e.target.files[0];
             if (file) {
@@ -2531,7 +2521,7 @@
             openNotificationsModal, closeNotificationsModal, shareApp, filterHomeSearch, switchTab,
             openContactModal, closeContactModal, submitContactMessage, openAddOfferModal, closeAddOfferModal,
             submitOffer, handleOfferImageUpload, openAddJobModal, closeAddJobModal, submitJob,
-            pickContactFromDevice, populateJoinSubCats, checkJoinBookingNotice, submitJoinDirectly, openSettingsModal, closeSettingsModal,
+            populateJoinSubCats, checkJoinBookingNotice, submitJoinDirectly, openSettingsModal, closeSettingsModal,
             openDeveloperModal, closeDeveloperModal, openAboutModal, closeAboutModal, openPrivacyModal,
             closePrivacyModal, openAdminLoginArea, closeOtpModal, requestAdminOtp, verifyAdminOtp, logoutAdmin,
             openSupervisorLoginModal, closeSupervisorLoginModal, verifySupervisorLogin,
