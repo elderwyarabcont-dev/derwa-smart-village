@@ -1350,12 +1350,20 @@
         function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
             const map = new Map();
             (existingArr || []).forEach(item => {
-                if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) map.set(String(item.id), item);
+                if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) {
+                    map.set(String(item.id), item);
+                }
             });
             (incomingArr || []).forEach(item => {
                 if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) {
                     const prev = map.get(String(item.id));
-                    if (prev && prev.image && !item.image) item.image = prev.image;
+                    if (prev) {
+                        if (prev.image && !item.image) item.image = prev.image;
+                        // إذا كان العنصر معتمداً في أي من النسختين، نحتفظ بحالة الاعتماد
+                        if (prev.status === 'approved' || item.status === 'approved') {
+                            item.status = 'approved';
+                        }
+                    }
                     map.set(String(item.id), item);
                 }
             });
@@ -1369,6 +1377,13 @@
             });
             [...(existingCats || []), ...(incomingCats || [])].forEach(c => {
                 if (!c || !c.id || deletedCatIds.includes(String(c.id))) return;
+                const prev = map.get(String(c.id));
+                if (prev && prev.subCategories && c.subCategories) {
+                    const subMap = new Map();
+                    prev.subCategories.forEach(s => { if (s && s.id) subMap.set(String(s.id), s); });
+                    c.subCategories.forEach(s => { if (s && s.id) subMap.set(String(s.id), s); });
+                    c.subCategories = Array.from(subMap.values());
+                }
                 map.set(String(c.id), JSON.parse(JSON.stringify(c)));
             });
             return Array.from(map.values());
@@ -1401,7 +1416,16 @@
                 const normPhone = String(item.phone || '').replace(/\D/g, '');
                 const dedupKey = `${item.mainCatId}_${normName}_${normPhone}`;
 
-                if (!uniqueMap.has(dedupKey)) uniqueMap.set(dedupKey, item);
+                if (!uniqueMap.has(dedupKey)) {
+                    uniqueMap.set(dedupKey, item);
+                } else {
+                    const existing = uniqueMap.get(dedupKey);
+                    // إذا كانت النسخة الجديدة معتمدة أو أحدث، نستبدل النسخة القديمة فوراً
+                    if (item.status === 'approved' || Number(item.id) >= Number(existing.id)) {
+                        if (existing.status === 'approved') item.status = 'approved';
+                        uniqueMap.set(dedupKey, item);
+                    }
+                }
             });
             dbItems = Array.from(uniqueMap.values());
         }
@@ -1423,84 +1447,145 @@
 
         function loadLocalCache() {
             try {
-                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed.deleted) deletedRecords = parsed.deleted;
-                    if (parsed.cats) dbCategories = mergeCategories(dbCategories, parsed.cats, deletedRecords.cats);
-                    if (parsed.items) dbItems = mergeArrayById(dbItems, parsed.items, deletedRecords.items);
-                    if (parsed.offers) dbOffers = mergeArrayById(dbOffers, parsed.offers, deletedRecords.offers);
-                    if (parsed.jobs) dbJobs = mergeArrayById(dbJobs, parsed.jobs, deletedRecords.jobs);
-                    if (parsed.sups) supervisors = mergeSupervisors(supervisors, parsed.sups);
+                // فحص واسترجاع البيانات من جميع المفاتيح السابقة في ذاكرة الجهاز لضمان عدم ضياع أي بيانات مضافة سابقاً
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.toLowerCase().includes('derwa')) {
+                        try {
+                            const rawOld = localStorage.getItem(key);
+                            if (rawOld) {
+                                const parsedOld = JSON.parse(rawOld);
+                                if (parsedOld.deleted) {
+                                    deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(parsedOld.deleted.items || [])]));
+                                    deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(parsedOld.deleted.offers || [])]));
+                                    deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(parsedOld.deleted.jobs || [])]));
+                                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(parsedOld.deleted.cats || [])]));
+                                }
+                                if (parsedOld.cats || parsedOld.categories) dbCategories = mergeCategories(dbCategories, parsedOld.cats || parsedOld.categories, deletedRecords.cats);
+                                if (parsedOld.items) dbItems = mergeArrayById(dbItems, parsedOld.items, deletedRecords.items);
+                                if (parsedOld.offers) dbOffers = mergeArrayById(dbOffers, parsedOld.offers, deletedRecords.offers);
+                                if (parsedOld.jobs) dbJobs = mergeArrayById(dbJobs, parsedOld.jobs, deletedRecords.jobs);
+                                if (parsedOld.sups || parsedOld.supervisors) supervisors = mergeSupervisors(supervisors, parsedOld.sups || parsedOld.supervisors);
+                            }
+                        } catch (innerErr) {}
+                    }
                 }
                 normalizeAndDeduplicateData();
+                saveLocalCache();
             } catch (e) {}
         }
 
-        // --- Firebase Cloud Integration ---
+        // --- Firebase Cloud Integration (Direct & Unblocked) ---
         let db = null;
         let auth = null;
-        let currentUser = null;
+        let cloudSyncReady = false;
+        let lastCloudError = null;
+
+        function getPrimaryDocRef() {
+            return doc(db, 'derwa_cloud_store', 'global_state_v20');
+        }
+
+        function getLegacyDocRef() {
+            return doc(db, 'artifacts', 'derwa-village-main-store', 'public', 'data', 'store', 'global');
+        }
 
         async function initFirebaseCloud() {
             try {
                 const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
                 db = getFirestore(app);
+                auth = getAuth(app);
 
-                await signInAnonymously(auth);
+                // محاولة تسجيل الدخول المجهول في الخلفية بدون تعطيل أو إيقاف قاعدة البيانات
+                signInAnonymously(auth).catch(() => {});
 
-                onAuthStateChanged(auth, async (user) => {
-                    currentUser = user;
-                    if (currentUser && db) {
-                        const stateDocRef = doc(db, 'artifacts', 'derwa-village-main-store', 'public', 'data', 'store', 'global');
-                        
-                        try {
-                            const snap = await getDoc(stateDocRef);
-                            if (snap.exists()) {
-                                applyCloudData(snap.data());
-                            } else {
-                                await pushToCloudStore();
-                            }
-                        } catch (err) {}
+                // سحب البيانات الفوري من المسار الرئيسي والمسار الاحتياطي فور فتح التطبيق
+                await pullLatestFromCloudSilently();
 
-                        // تفعيل الاستماع الفوري الحقيقي Real-time listener
-                        onSnapshot(stateDocRef, (docSnap) => {
-                            if (docSnap.exists()) {
-                                applyCloudData(docSnap.data());
-                            }
-                        }, (err) => {});
+                // تفعيل الاستماع الفوري الحقيقي (Real-Time Listener) بدون اشتراط currentUser
+                onSnapshot(getPrimaryDocRef(), (docSnap) => {
+                    if (docSnap.exists()) {
+                        cloudSyncReady = true;
+                        lastCloudError = null;
+                        applyCloudData(docSnap.data());
                     }
+                }, (err) => {
+                    lastCloudError = err ? err.code || err.message : 'error';
                 });
-            } catch (e) {}
+
+                // دورة تحديث تلقائية كل 6 ثوانٍ لضمان وصول التحديثات داخل تطبيقات WebView و AppCreator24
+                setInterval(() => {
+                    pullLatestFromCloudSilently();
+                }, 6000);
+
+            } catch (e) {
+                lastCloudError = e.message;
+            }
+        }
+
+        async function pullLatestFromCloudSilently() {
+            if (!db) return false;
+            try {
+                const primarySnap = await getDoc(getPrimaryDocRef());
+                if (primarySnap.exists()) {
+                    cloudSyncReady = true;
+                    lastCloudError = null;
+                    applyCloudData(primarySnap.data());
+                    return true;
+                }
+                const legacySnap = await getDoc(getLegacyDocRef());
+                if (legacySnap.exists()) {
+                    cloudSyncReady = true;
+                    lastCloudError = null;
+                    applyCloudData(legacySnap.data());
+                    await pushToCloudStore(false);
+                    return true;
+                }
+                // إذا كانت قاعدة البيانات فارغة في أول مرة، نرفع البيانات الأساسية إليها
+                await pushToCloudStore(false);
+                return true;
+            } catch (err) {
+                lastCloudError = err ? (err.code || err.message) : 'permission-denied';
+                return false;
+            }
         }
 
         function applyCloudData(cloudData) {
             if (!cloudData) return;
-            if (cloudData.deletedJson) {
-                const rDel = JSON.parse(cloudData.deletedJson);
-                deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(rDel.items || [])]));
-                deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(rDel.offers || [])]));
-                deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(rDel.jobs || [])]));
-                deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(rDel.cats || [])]));
-            }
-            if (cloudData.categoriesJson) dbCategories = mergeCategories(dbCategories, JSON.parse(cloudData.categoriesJson), deletedRecords.cats);
-            if (cloudData.itemsJson) dbItems = mergeArrayById(dbItems, JSON.parse(cloudData.itemsJson), deletedRecords.items);
-            if (cloudData.offersJson) dbOffers = mergeArrayById(dbOffers, JSON.parse(cloudData.offersJson), deletedRecords.offers);
-            if (cloudData.jobsJson) dbJobs = mergeArrayById(dbJobs, JSON.parse(cloudData.jobsJson), deletedRecords.jobs);
-            if (cloudData.supervisorsJson) supervisors = mergeSupervisors(supervisors, JSON.parse(cloudData.supervisorsJson));
-            
-            normalizeAndDeduplicateData();
-            saveLocalCache();
-            refreshAllViews();
+            try {
+                if (cloudData.deletedJson) {
+                    const rDel = JSON.parse(cloudData.deletedJson);
+                    deletedRecords.items = Array.from(new Set([...deletedRecords.items, ...(rDel.items || [])]));
+                    deletedRecords.offers = Array.from(new Set([...deletedRecords.offers, ...(rDel.offers || [])]));
+                    deletedRecords.jobs = Array.from(new Set([...deletedRecords.jobs, ...(rDel.jobs || [])]));
+                    deletedRecords.cats = Array.from(new Set([...deletedRecords.cats, ...(rDel.cats || [])]));
+                }
+                if (cloudData.categoriesJson) dbCategories = mergeCategories(dbCategories, JSON.parse(cloudData.categoriesJson), deletedRecords.cats);
+                if (cloudData.itemsJson) dbItems = mergeArrayById(dbItems, JSON.parse(cloudData.itemsJson), deletedRecords.items);
+                if (cloudData.offersJson) dbOffers = mergeArrayById(dbOffers, JSON.parse(cloudData.offersJson), deletedRecords.offers);
+                if (cloudData.jobsJson) dbJobs = mergeArrayById(dbJobs, JSON.parse(cloudData.jobsJson), deletedRecords.jobs);
+                if (cloudData.supervisorsJson) supervisors = mergeSupervisors(supervisors, JSON.parse(cloudData.supervisorsJson));
+
+                normalizeAndDeduplicateData();
+                saveLocalCache();
+                refreshAllViews();
+            } catch (e) {}
         }
 
-        async function pushToCloudStore() {
+        async function pushToCloudStore(pullBeforePush = true) {
             saveLocalCache();
-            if (!db || !currentUser) return;
+            if (!db) return false;
             try {
-                const stateDocRef = doc(db, 'artifacts', 'derwa-village-main-store', 'public', 'data', 'store', 'global');
-                await setDoc(stateDocRef, {
+                // سحب ودمج أي إضافات على السيرفر أولاً حتى لا يمسح هاتف بيانات هاتف آخر
+                if (pullBeforePush) {
+                    try {
+                        const snap = await getDoc(getPrimaryDocRef());
+                        if (snap.exists()) {
+                            applyCloudData(snap.data());
+                        }
+                    } catch (e) {}
+                }
+
+                const payload = {
                     updatedAt: Date.now(),
                     categoriesJson: JSON.stringify(dbCategories),
                     itemsJson: JSON.stringify(dbItems),
@@ -1508,19 +1593,33 @@
                     jobsJson: JSON.stringify(dbJobs),
                     supervisorsJson: JSON.stringify(supervisors),
                     deletedJson: JSON.stringify(deletedRecords)
-                });
-            } catch (e) {}
+                };
+
+                await setDoc(getPrimaryDocRef(), payload);
+                setDoc(getLegacyDocRef(), payload).catch(() => {});
+                cloudSyncReady = true;
+                lastCloudError = null;
+                refreshAllViews();
+                return true;
+            } catch (e) {
+                lastCloudError = e ? (e.code || e.message) : 'error';
+                return false;
+            }
         }
 
-        async function syncWithCloud(deltaPayload = null) {
+        async function syncWithCloud() {
             saveLocalCache();
             refreshAllViews();
-            await pushToCloudStore();
+            return await pushToCloudStore(true);
         }
 
         async function forceFullCloudBroadcast() {
-            await pushToCloudStore();
-            showAlert('تم البث الشامل بنجاح', `تم مزامنة ورفع جميع البيانات (${dbItems.length} خدمة و${dbOffers.length} عرض) إلى سيرفر Firebase الخاص بك لجميع الهواتف فوراً.`);
+            const ok = await pushToCloudStore(true);
+            if (ok) {
+                showAlert('تم البث الشامل بنجاح', `تم رفع ومزامنة جميع البيانات (${dbItems.length} خدمة و${dbOffers.length} عرض) إلى سيرفر Firebase الخاص بك لجميع الهواتف فوراً.`);
+            } else {
+                showAlert('تنبيه إعدادات Firebase Rules', `تعذر الكتابة في السيرفر (${lastCloudError || 'Permission Denied'}). تأكد من فتح تبويب Rules في Firestore Database وجعلها allow read, write: if true;`, false);
+            }
         }
 
         async function manualForcePullCloud() {
@@ -1529,19 +1628,17 @@
             if (icon) icon.classList.add('fa-spin');
             if (homeIcon) homeIcon.classList.add('fa-spin');
 
-            if (db && currentUser) {
-                try {
-                    const stateDocRef = doc(db, 'artifacts', 'derwa-village-main-store', 'public', 'data', 'store', 'global');
-                    const snap = await getDoc(stateDocRef);
-                    if (snap.exists()) applyCloudData(snap.data());
-                } catch (e) {}
-            }
+            const ok = await pullLatestFromCloudSilently();
 
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
                 if (homeIcon) homeIcon.classList.remove('fa-spin');
-                showAlert('تم التحديث بنجاح', `تم سحب أحدث البيانات من سيرفر Firebase: (${dbItems.filter(i => i.status === 'approved').length} خدمة) و (${dbOffers.filter(o => o.status === 'approved').length} عرض).`);
-            }, 600);
+                if (ok) {
+                    showAlert('تم التحديث بنجاح', `تم سحب أحدث البيانات من سيرفر Firebase: (${dbItems.filter(i => i.status === 'approved').length} خدمة) و (${dbOffers.filter(o => o.status === 'approved').length} عرض).`);
+                } else {
+                    showAlert('تنبيه اتصال السيرفر', `لم يتمكن التطبيق من القراءة من Firebase (${lastCloudError || 'تأكد من تفعيل Firestore Rules إلى allow read, write: if true;'}).`, false);
+                }
+            }, 500);
         }
 
         function updatePendingBadge() {
@@ -1571,7 +1668,13 @@
             const badge = document.getElementById('activeCountBadge');
             if (badge) {
                 const count = dbItems.filter(i => i.status === 'approved').length;
-                badge.innerText = currentLang === 'en' ? `Connected to your Firebase (${count} services)` : `متصل بسيرفر Firebase الخاص بك (${count} خدمة)`;
+                if (lastCloudError) {
+                    badge.innerText = `تنبيه السيرفر: ${lastCloudError} (${count} خدمة محلية)`;
+                } else if (cloudSyncReady) {
+                    badge.innerText = currentLang === 'en' ? `Connected to Firebase (${count} services)` : `متصل بسيرفر Firebase بنجاح (${count} خدمة)`;
+                } else {
+                    badge.innerText = `جاري الاتصال بسيرفر Firebase... (${count} خدمة)`;
+                }
             }
         }
 
@@ -2303,7 +2406,7 @@
             else { pinWrapper.classList.add('hidden'); document.getElementById('admFormPin').value = ''; }
         }
 
-        function adminSaveServiceDirectly(e) {
+        async function adminSaveServiceDirectly(e) {
             e.preventDefault();
             let name = document.getElementById('admFormName').value.trim();
             const mainCatId = document.getElementById('admFormMainCat').value;
@@ -2321,9 +2424,13 @@
             const newItem = { id: Date.now(), type: 'directory', name, mainCatId, subCatId, phone, whatsapp, address, pinCode, status: 'approved', isDoctorClinic: needsBooking, bookings: [], bookedSeats: 0, maxSeats: 14, passengersList: [], ratings: [] };
             dbItems.push(newItem);
             normalizeAndDeduplicateData();
-            syncWithCloud();
             closeAdminAddServiceModal();
-            showAlert('تمت الإضافة', 'تم نشر الجهة ومزامنتها سحابياً على جميع الهواتف فوراً.');
+            const ok = await syncWithCloud();
+            if (ok) {
+                showAlert('تمت الإضافة والبث', 'تم نشر الجهة ومزامنتها سحابياً على جميع الهواتف فوراً.');
+            } else {
+                showAlert('تنبيه إعدادات Firebase Rules', `تم الحفظ محلياً، ولكن السيرفر رفض الكتابة (${lastCloudError}). تأكد من جعل Firestore Rules: allow read, write: if true;`, false);
+            }
         }
 
         function openAdminEditItemModal(itemId) {
@@ -2350,7 +2457,7 @@
             }
         }
 
-        function adminSaveEditedItem(e) {
+        async function adminSaveEditedItem(e) {
             e.preventDefault();
             const itemId = Number(document.getElementById('editItemId').value);
             const item = dbItems.find(i => Number(i.id) === itemId);
@@ -2361,8 +2468,8 @@
             item.phone = document.getElementById('editItemPhone').value.trim();
             item.whatsapp = formatEgyptWhatsApp(document.getElementById('editItemWhatsapp').value.trim() || item.phone);
             item.address = document.getElementById('editItemAddress').value.trim();
-            syncWithCloud();
             closeAdminEditItemModal();
+            await syncWithCloud();
             renderAdminApprovalTable();
             showAlert('تم التعديل', 'تم حفظ التعديلات ومزامنتها سحابياً.');
         }
@@ -2384,23 +2491,29 @@
             container.innerHTML = supervisors.map((s, idx) => `<div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl text-xs"><b>${s.name}</b> (${s.phone || s.email}) ${s.role !== 'super_admin' ? `<button onclick="supervisors.splice(${idx},1);syncWithCloud();renderSupervisorsList();" class="text-red-400">حذف</button>` : ''}</div>`).join('');
         }
 
-        function approveSubmission(tableType, id) {
+        async function approveSubmission(tableType, id) {
             if (tableType === 'directory') {
                 const item = dbItems.find(i => Number(i.id) === Number(id));
-                if (item) { item.status = 'approved'; syncWithCloud(); }
+                if (item) item.status = 'approved';
             } else if (tableType === 'offer') {
                 const offer = dbOffers.find(o => Number(o.id) === Number(id));
-                if (offer) { offer.status = 'approved'; syncWithCloud(); }
+                if (offer) offer.status = 'approved';
             } else if (tableType === 'job') {
                 const job = dbJobs.find(j => Number(j.id) === Number(id));
-                if (job) { job.status = 'approved'; syncWithCloud(); }
+                if (job) job.status = 'approved';
             }
+            normalizeAndDeduplicateData();
+            const ok = await syncWithCloud();
             renderAdminApprovalTable();
             refreshAllViews();
-            showAlert('تم الاعتماد', 'تمت الموافقة ونشر العنصر سحابياً لجميع الهواتف بنجاح.');
+            if (ok) {
+                showAlert('تم الاعتماد والبث السحابي', 'تمت الموافقة ونشر العنصر سحابياً لجميع الهواتف بنجاح.');
+            } else {
+                showAlert('تنبيه صلاحيات السيرفر', `تم الاعتماد محلياً، ولكن السيرفر رفض الكتابة (${lastCloudError}). تأكد من فتح Firestore Rules إلى allow read, write: if true;`, false);
+            }
         }
 
-        function deleteSubmission(tableType, id) {
+        async function deleteSubmission(tableType, id) {
             if (tableType === 'directory') {
                 deletedRecords.items.push(String(id));
                 dbItems = dbItems.filter(i => Number(i.id) !== Number(id));
@@ -2411,7 +2524,7 @@
                 deletedRecords.jobs.push(String(id));
                 dbJobs = dbJobs.filter(j => Number(j.id) !== Number(id));
             }
-            syncWithCloud();
+            await syncWithCloud();
             renderAdminApprovalTable();
             refreshAllViews();
             showAlert('تم الحذف', 'تم حذف العنصر ومحو سجله سحابياً بنجاح.');
@@ -2450,10 +2563,10 @@
             `).join('');
         }
 
-        function deleteDirItem(itemId) {
+        async function deleteDirItem(itemId) {
             deletedRecords.items.push(String(itemId));
             dbItems = dbItems.filter(i => Number(i.id) !== Number(itemId));
-            syncWithCloud();
+            await syncWithCloud();
             renderAdminDirectoryItemsManager();
             renderAdminApprovalTable();
             showAlert('تم الحذف', 'تم حذف جهة الاتصال ومحوها سحابياً بنجاح.');
