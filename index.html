@@ -1166,14 +1166,14 @@
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const LIVE_SYNC_TOPIC = "derwa_smart_village_malawi_cloud_v20_main";
-        const LIVE_IMG_TOPIC = "derwa_smart_village_malawi_cloud_v20_imgs";
+        const LIVE_OFFERS_TOPIC = "derwa_smart_village_malawi_cloud_v20_offers";
+        const LEGACY_SYNC_TOPIC = "derwa_smart_village_malawi_live_v8";
         const LIVE_SYNC_URL = `https://ntfy.sh/${LIVE_SYNC_TOPIC}`;
-        const LIVE_IMG_URL = `https://ntfy.sh/${LIVE_IMG_TOPIC}`;
+        const LIVE_OFFERS_URL = `https://ntfy.sh/${LIVE_OFFERS_TOPIC}`;
+        const LEGACY_SYNC_URL = `https://ntfy.sh/${LEGACY_SYNC_TOPIC}`;
 
         const cloudSendQueue = [];
         let isProcessingQueue = false;
-        const incomingImageChunks = {};
-        const uploadedOfferImgIds = new Set();
 
         let defaultCategories = [
             {
@@ -1327,6 +1327,68 @@
             return digits;
         }
 
+        function compressBase64ImageToFitPacket(base64Str, maxChars = 2500) {
+            return new Promise((resolve) => {
+                if (!base64Str || !base64Str.startsWith('data:image')) {
+                    resolve('');
+                    return;
+                }
+                if (base64Str.length <= maxChars) {
+                    resolve(base64Str);
+                    return;
+                }
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let maxDim = 340;
+                    let quality = 0.58;
+                    let resultUrl = '';
+
+                    for (let attempt = 0; attempt < 5; attempt++) {
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+                        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+                        canvas.width = Math.max(1, Math.round(w));
+                        canvas.height = Math.max(1, Math.round(h));
+                        const ctx = canvas.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        resultUrl = canvas.toDataURL('image/webp', quality);
+                        if (!resultUrl.startsWith('data:image/webp')) {
+                            resultUrl = canvas.toDataURL('image/jpeg', quality);
+                        }
+                        if (resultUrl.length <= maxChars) break;
+                        maxDim = Math.round(maxDim * 0.78);
+                        quality = Math.max(0.35, quality - 0.1);
+                    }
+                    resolve(resultUrl.length <= 3300 ? resultUrl : '');
+                };
+                img.onerror = function() { resolve(''); };
+                img.src = base64Str;
+            });
+        }
+
+        async function optimizeAllLocalOffersImages() {
+            let changed = false;
+            for (const offer of dbOffers) {
+                if (offer && offer.image && offer.image.length > 2600) {
+                    const compact = await compressBase64ImageToFitPacket(offer.image, 2500);
+                    if (compact) {
+                        offer.image = compact;
+                        offer.hasImage = true;
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                saveLocalCache();
+                refreshAllViews();
+            }
+        }
+
         function enqueueCloudPacket(url, payloadObj, highPriority = false) {
             return new Promise((resolve) => {
                 const task = { url, payloadObj, resolve, retries: 0 };
@@ -1353,19 +1415,19 @@
                         body: bodyStr
                     });
 
-                    if (res.status === 429 && task.retries < 4) {
+                    if (res.status === 429 && task.retries < 3) {
                         task.retries++;
-                        await new Promise(r => setTimeout(r, 1800 * task.retries));
+                        await new Promise(r => setTimeout(r, 1500 * task.retries));
                         continue;
                     }
 
                     cloudSendQueue.shift();
-                    task.resolve(true);
-                    await new Promise(r => setTimeout(r, 280));
+                    task.resolve(res.ok);
+                    await new Promise(r => setTimeout(r, 320));
                 } catch (e) {
                     if (task.retries < 2) {
                         task.retries++;
-                        await new Promise(r => setTimeout(r, 1200));
+                        await new Promise(r => setTimeout(r, 1000));
                     } else {
                         cloudSendQueue.shift();
                         task.resolve(false);
@@ -1385,77 +1447,11 @@
         }
 
         async function saveOfferImageToCloud(offerId, base64Data) {
-            if (!offerId || !base64Data) return;
-            const idStr = String(offerId);
-            if (uploadedOfferImgIds.has(idStr)) return;
-            uploadedOfferImgIds.add(idStr);
-
-            const chunkSize = 2500;
-            const total = Math.ceil(base64Data.length / chunkSize);
-            for (let i = 0; i < total; i++) {
-                const part = base64Data.slice(i * chunkSize, (i + 1) * chunkSize);
-                await enqueueCloudPacket(LIVE_IMG_URL, {
-                    op: 'IMG_CHUNK',
-                    offerId: idStr,
-                    idx: i,
-                    total,
-                    data: part
-                }, false);
-            }
-        }
-
-        function handleIncomingImageChunk(opObj) {
-            if (!opObj || opObj.op !== 'IMG_CHUNK' || !opObj.offerId) return false;
-            const idStr = String(opObj.offerId);
-            if (!incomingImageChunks[idStr]) {
-                incomingImageChunks[idStr] = { total: opObj.total, parts: {} };
-            }
-            incomingImageChunks[idStr].parts[opObj.idx] = opObj.data;
-            const entry = incomingImageChunks[idStr];
-            if (Object.keys(entry.parts).length === entry.total) {
-                let fullBase64 = '';
-                for (let i = 0; i < entry.total; i++) {
-                    fullBase64 += (entry.parts[i] || '');
-                }
-                const offer = dbOffers.find(o => String(o.id) === idStr);
-                if (offer && fullBase64.startsWith('data:image')) {
-                    offer.image = fullBase64;
-                    offer.hasImage = true;
-                    uploadedOfferImgIds.add(idStr);
-                    return true;
-                }
-            }
-            return false;
+            return;
         }
 
         async function ensureAllOfferImagesLoaded() {
-            const missingOffers = dbOffers.filter(o => o && o.id && !o.image && o.hasImage !== false);
-            if (missingOffers.length === 0) return;
-
-            try {
-                const res = await fetch(`${LIVE_IMG_URL}/json?poll=1&since=all`);
-                if (res.ok) {
-                    const text = await res.text();
-                    const lines = text.trim().split('\n');
-                    let anyUpdated = false;
-                    for (const line of lines) {
-                        if (!line) continue;
-                        try {
-                            const wrapper = JSON.parse(line);
-                            if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                                const opObj = JSON.parse(wrapper.message);
-                                if (handleIncomingImageChunk(opObj)) {
-                                    anyUpdated = true;
-                                }
-                            }
-                        } catch (err) {}
-                    }
-                    if (anyUpdated) {
-                        saveLocalCache();
-                        refreshAllViews();
-                    }
-                }
-            } catch (e) {}
+            return;
         }
 
         function mergeArrayById(existingArr, incomingArr, deletedIdList = []) {
@@ -1811,25 +1807,28 @@
         }
 
         async function broadcastCategoriesChunked() {
-            const catChunks = chunkArray(dbCategories, 2);
-            for (let i = 0; i < catChunks.length; i++) {
-                const nowTs = Date.now();
-                const opId = nowTs + '_cat_' + i + '_' + Math.random().toString(36).substring(2, 6);
-                processedOpIds.add(opId);
-                await enqueueCloudPacket(LIVE_SYNC_URL, {
-                    op: 'CATS_CHUNK',
-                    opId,
-                    ts: nowTs,
-                    cats: catChunks[i],
-                    deleted: i === 0 ? deletedRecords : undefined
-                }, false);
+            const customCats = dbCategories.filter(c => !defaultCategories.some(dc => dc.id === c.id));
+            if (customCats.length === 0 && deletedRecords.cats.length === 0 && deletedRecords.items.length === 0 && deletedRecords.offers.length === 0 && deletedRecords.jobs.length === 0) {
+                return;
             }
+            const nowTs = Date.now();
+            const opId = nowTs + '_cat_' + Math.random().toString(36).substring(2, 6);
+            processedOpIds.add(opId);
+            await enqueueCloudPacket(LIVE_SYNC_URL, {
+                op: 'CATS_CHUNK',
+                opId,
+                ts: nowTs,
+                cats: customCats,
+                deleted: deletedRecords
+            }, false);
         }
 
         async function reseedMissingDataToCloud(forceAll = false) {
             lastReseedTime = Date.now();
             try {
-                if (forceAll || !remoteSeenCats) {
+                await optimizeAllLocalOffersImages();
+
+                if (forceAll) {
                     await broadcastCategoriesChunked();
                 }
 
@@ -1839,38 +1838,43 @@
                 });
                 itemsToSend.forEach(it => remoteSeenItemIds.add(String(it.id)));
 
-                const itemBatches = chunkArray(itemsToSend, 6);
+                const itemBatches = chunkArray(itemsToSend, 5);
                 for (const batch of itemBatches) {
                     const opId = Date.now() + '_ib_' + Math.random().toString(36).substring(2, 6);
                     processedOpIds.add(opId);
-                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_ITEMS', opId, ts: Date.now(), items: batch }, false);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_ITEMS', opId, ts: Date.now(), items: batch }, true);
+                }
+
+                for (const item of itemsToSend) {
+                    const opId = Date.now() + '_iu_' + Math.random().toString(36).substring(2, 6);
+                    processedOpIds.add(opId);
+                    enqueueCloudPacket(LEGACY_SYNC_URL, { op: 'ITEM_UPSERT', opId, ts: Date.now(), item }, false);
                 }
 
                 const offersToSend = dbOffers.filter(offer => forceAll || !remoteSeenOfferIds.has(String(offer.id)));
-                for (const offer of dbOffers) {
-                    if (offer.image) {
-                        saveOfferImageToCloud(offer.id, offer.image);
+                for (const offer of offersToSend) {
+                    remoteSeenOfferIds.add(String(offer.id));
+                    if (offer.image && offer.image.length > 2600) {
+                        offer.image = await compressBase64ImageToFitPacket(offer.image, 2500);
                     }
-                }
-                offersToSend.forEach(of => remoteSeenOfferIds.add(String(of.id)));
-                const slimOffers = offersToSend.map(o => ({ ...o, hasImage: Boolean(o.image || o.hasImage), image: '' }));
-                const offerBatches = chunkArray(slimOffers, 5);
-                for (const batch of offerBatches) {
-                    const opId = Date.now() + '_ob_' + Math.random().toString(36).substring(2, 6);
+                    const opId = Date.now() + '_of_' + Math.random().toString(36).substring(2, 6);
                     processedOpIds.add(opId);
-                    await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_OFFERS', opId, ts: Date.now(), offers: batch }, false);
+                    const packet = { op: 'OFFER_UPSERT', opId, ts: Date.now(), offer };
+                    await enqueueCloudPacket(LIVE_OFFERS_URL, packet, true);
+                    await enqueueCloudPacket(LIVE_SYNC_URL, packet, false);
+                    enqueueCloudPacket(LEGACY_SYNC_URL, packet, false);
                 }
 
                 const jobsToSend = dbJobs.filter(job => forceAll || !remoteSeenJobIds.has(String(job.id)));
                 jobsToSend.forEach(jb => remoteSeenJobIds.add(String(jb.id)));
-                const jobBatches = chunkArray(jobsToSend, 6);
+                const jobBatches = chunkArray(jobsToSend, 5);
                 for (const batch of jobBatches) {
                     const opId = Date.now() + '_jb_' + Math.random().toString(36).substring(2, 6);
                     processedOpIds.add(opId);
                     await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'BATCH_JOBS', opId, ts: Date.now(), jobs: batch }, false);
                 }
 
-                if (forceAll || supervisors.length > 2) {
+                if (forceAll && supervisors.length > 2) {
                     const opId = Date.now() + '_sup_' + Math.random().toString(36).substring(2, 6);
                     processedOpIds.add(opId);
                     await enqueueCloudPacket(LIVE_SYNC_URL, { op: 'SUPS_SYNC', opId, ts: Date.now(), sups: supervisors }, false);
@@ -1879,9 +1883,9 @@
         }
 
         async function forceFullCloudBroadcast() {
-            showAlert('جاري البث الشامل...', 'يتم الآن رفع ومزامنة جميع البيانات والأقسام والصور تباعاً إلى السحابة لجميع الهواتف...');
+            showAlert('جاري البث الشامل...', 'يرجى الانتظار ثواني قليلة، يتم الآن ضغط ورفع جميع العروض وجهات الاتصال إلى السحابة...');
             await reseedMissingDataToCloud(true);
-            showAlert('تم البث والمزامنة الشاملة', 'تم رفع وبث جميع البنود والأشخاص وجميع صور العروض والوظائف من هاتفك إلى السحابة الدائمة وإلى جميع الهواتف بنجاح.');
+            showAlert('تم البث والمزامنة الشاملة بنجاح', `تم بث (${dbItems.length} جهة اتصال) و (${dbOffers.length} عرض بالصور) و (${dbJobs.length} وظيفة) بنجاح إلى جميع الهواتف.`);
         }
 
         async function manualForcePullCloud() {
@@ -1890,11 +1894,10 @@
             if (icon) icon.classList.add('fa-spin');
             if (homeIcon) homeIcon.classList.add('fa-spin');
             await pollCloudMessages('all');
-            await ensureAllOfferImagesLoaded();
             setTimeout(() => {
                 if (icon) icon.classList.remove('fa-spin');
                 if (homeIcon) homeIcon.classList.remove('fa-spin');
-                showAlert('تم التحديث بنجاح', 'تم تحديث التطبيق وجلب أحدث الإضافات والإزالات والعروض من السحابة بنجاح.');
+                showAlert('تم التحديث بنجاح', `تم تحديث التطبيق بنجاح: متاح الآن (${dbItems.filter(i => i.status === 'approved').length} خدمة) و (${dbOffers.filter(o => o.status === 'approved').length} عرض).`);
             }, 600);
         }
 
@@ -1902,12 +1905,13 @@
             const nowTs = Date.now();
             const opId = nowTs + '_' + Math.random().toString(36).substring(2, 8);
             processedOpIds.add(opId);
+
+            if (deltaPayload && deltaPayload.offer && deltaPayload.offer.image && deltaPayload.offer.image.length > 2600) {
+                deltaPayload.offer.image = await compressBase64ImageToFitPacket(deltaPayload.offer.image, 2500);
+            }
+
             saveLocalCache();
             refreshAllViews();
-
-            if (deltaPayload && deltaPayload.offer && deltaPayload.offer.image) {
-                saveOfferImageToCloud(deltaPayload.offer.id, deltaPayload.offer.image);
-            }
 
             if (db && currentUser) {
                 try {
@@ -1935,38 +1939,47 @@
                     return;
                 }
 
-                let messageToSend = { ...deltaPayload, opId, ts: nowTs };
-                if (messageToSend.offer && messageToSend.offer.image) {
-                    const slimOffer = { ...messageToSend.offer, hasImage: true, image: '' };
-                    messageToSend = { ...messageToSend, offer: slimOffer };
+                const messageToSend = { ...deltaPayload, opId, ts: nowTs };
+                if (deltaPayload.op === 'OFFER_UPSERT' || deltaPayload.op === 'OFFER_DELETE') {
+                    await enqueueCloudPacket(LIVE_OFFERS_URL, messageToSend, true);
                 }
-
                 await enqueueCloudPacket(LIVE_SYNC_URL, messageToSend, true);
+                enqueueCloudPacket(LEGACY_SYNC_URL, messageToSend, false);
             } catch (e) {}
         }
 
         async function pollCloudMessages(sinceParam = 'all') {
-            try {
-                const res = await fetch(`${LIVE_SYNC_URL}/json?poll=1&since=${sinceParam}`);
-                if (!res.ok) return;
-                const text = await res.text();
-                const lines = text.trim().split('\n');
-                for (const line of lines) {
-                    if (!line) continue;
-                    try {
-                        const wrapper = JSON.parse(line);
-                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                            const opObj = JSON.parse(wrapper.message);
-                            applyRemoteOperation(opObj);
-                        }
-                    } catch (innerErr) {}
-                }
-            } catch (e) {}
+            const cb = Date.now();
+            const urlsToPoll = [
+                `${LIVE_OFFERS_URL}/json?poll=1&since=${sinceParam}&_nc=${cb}`,
+                `${LIVE_SYNC_URL}/json?poll=1&since=${sinceParam}&_nc=${cb}`
+            ];
+            if (sinceParam === 'all') {
+                urlsToPoll.push(`${LEGACY_SYNC_URL}/json?poll=1&since=all&_nc=${cb}`);
+            }
+            for (const pollUrl of urlsToPoll) {
+                try {
+                    const res = await fetch(pollUrl, { cache: 'no-store' });
+                    if (!res.ok) continue;
+                    const text = await res.text();
+                    const lines = text.trim().split('\n');
+                    for (const line of lines) {
+                        if (!line) continue;
+                        try {
+                            const wrapper = JSON.parse(line);
+                            if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                                const opObj = JSON.parse(wrapper.message);
+                                applyRemoteOperation(opObj);
+                            }
+                        } catch (innerErr) {}
+                    }
+                } catch (e) {}
+            }
         }
 
         async function connectLiveMultiDeviceCloud() {
+            await optimizeAllLocalOffersImages();
             await pollCloudMessages('all');
-            await ensureAllOfferImagesLoaded();
 
             const hasUnseenLocalData = dbItems.some(it => ![1, 2, 3].includes(Number(it.id)) && !remoteSeenItemIds.has(String(it.id)))
                 || dbOffers.some(of => !remoteSeenOfferIds.has(String(of.id)))
@@ -1976,38 +1989,24 @@
                 reseedMissingDataToCloud(false);
             }
 
-            try {
-                const evtSource = new EventSource(`${LIVE_SYNC_URL}/sse`);
-                evtSource.onmessage = (event) => {
-                    try {
-                        const wrapper = JSON.parse(event.data);
-                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                            const opObj = JSON.parse(wrapper.message);
-                            applyRemoteOperation(opObj);
-                        }
-                    } catch (err) {}
-                };
-            } catch (e) {}
-
-            try {
-                const imgEvtSource = new EventSource(`${LIVE_IMG_URL}/sse`);
-                imgEvtSource.onmessage = (event) => {
-                    try {
-                        const wrapper = JSON.parse(event.data);
-                        if (wrapper && wrapper.event === 'message' && wrapper.message) {
-                            const opObj = JSON.parse(wrapper.message);
-                            if (handleIncomingImageChunk(opObj)) {
-                                saveLocalCache();
-                                refreshAllViews();
+            [LIVE_SYNC_URL, LIVE_OFFERS_URL, LEGACY_SYNC_URL].forEach(url => {
+                try {
+                    const evtSource = new EventSource(`${url}/sse`);
+                    evtSource.onmessage = (event) => {
+                        try {
+                            const wrapper = JSON.parse(event.data);
+                            if (wrapper && wrapper.event === 'message' && wrapper.message) {
+                                const opObj = JSON.parse(wrapper.message);
+                                applyRemoteOperation(opObj);
                             }
-                        }
-                    } catch (err) {}
-                };
-            } catch (e) {}
+                        } catch (err) {}
+                    };
+                } catch (e) {}
+            });
 
             setInterval(() => {
-                pollCloudMessages('30s');
-            }, 9000);
+                pollCloudMessages('45s');
+            }, 10000);
         }
 
         function updatePendingBadge() {
@@ -2548,30 +2547,15 @@
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        let maxDim = 800;
-                        let w = img.width, h = img.height;
-                        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
-                        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
-                        canvas.width = Math.max(1, Math.round(w));
-                        canvas.height = Math.max(1, Math.round(h));
-                        const ctx = canvas.getContext('2d');
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        let dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-                        document.getElementById('offerImageBase64').value = dataUrl;
-                        const prevBox = document.getElementById('offerImagePreviewBox');
-                        const prevEl = document.getElementById('offerImagePreviewEl');
-                        if (prevBox && prevEl) {
-                            prevEl.src = dataUrl;
-                            prevBox.classList.remove('hidden');
-                        }
-                    };
-                    img.src = evt.target.result;
+                reader.onload = async function(evt) {
+                    const compactDataUrl = await compressBase64ImageToFitPacket(evt.target.result, 2500);
+                    document.getElementById('offerImageBase64').value = compactDataUrl;
+                    const prevBox = document.getElementById('offerImagePreviewBox');
+                    const prevEl = document.getElementById('offerImagePreviewEl');
+                    if (prevBox && prevEl && compactDataUrl) {
+                        prevEl.src = compactDataUrl;
+                        prevBox.classList.remove('hidden');
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -2688,15 +2672,20 @@
             const description = document.getElementById('offerDesc').value.trim();
             const phone = document.getElementById('offerPhone').value.trim();
             const offerId = Date.now();
-            const newOffer = { id: offerId, type: 'offer', title, store, image, hasImage: Boolean(image), description, phone, status: 'pending' };
+            const initialStatus = currentLoggedInAdmin ? 'approved' : 'pending';
+            const newOffer = { id: offerId, type: 'offer', title, store, image, hasImage: Boolean(image), description, phone, status: initialStatus };
             dbOffers.push(newOffer);
-            if (image) {
-                await saveOfferImageToCloud(offerId, image);
-            }
             await syncWithCloud({ op: 'OFFER_UPSERT', offer: newOffer });
+            if (image) {
+                saveOfferImageToCloud(offerId, image);
+            }
             closeAddOfferModal();
             renderOffers();
-            showAlert('تم إرسال العرض للمسؤول', 'تم حفظ الصورة بحجمها الطبيعي الكامل وإرسال العرض إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه.');
+            if (initialStatus === 'approved') {
+                showAlert('تم نشر العرض فوراً', 'تم نشر العرض وصورته مباشرةً لجميع الهواتف لأنك مسجل كمسؤول.');
+            } else {
+                showAlert('تم إرسال العرض للمسؤول', 'تم حفظ الصورة وإرسال العرض إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه.');
+            }
         }
 
         function openAddJobModal() {
@@ -2713,12 +2702,17 @@
             const store = document.getElementById('jobStore').value.trim();
             const description = document.getElementById('jobDesc').value.trim();
             const phone = document.getElementById('jobPhone').value.trim();
-            const newJob = { id: Date.now(), type: 'job', title, store, description, phone, status: 'pending' };
+            const initialStatus = currentLoggedInAdmin ? 'approved' : 'pending';
+            const newJob = { id: Date.now(), type: 'job', title, store, description, phone, status: initialStatus };
             dbJobs.push(newJob);
             syncWithCloud({ op: 'JOB_UPSERT', job: newJob });
             closeAddJobModal();
             renderJobs();
-            showAlert('تم إرسال الوظيفة للمسؤول', 'تم إرسال إعلان الوظيفة بنجاح إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه أو رفضه.');
+            if (initialStatus === 'approved') {
+                showAlert('تم نشر الوظيفة فوراً', 'تم نشر إعلان الوظيفة مباشرةً لجميع الهواتف لأنك مسجل كمسؤول.');
+            } else {
+                showAlert('تم إرسال الوظيفة للمسؤول', 'تم إرسال إعلان الوظيفة بنجاح إلى صفحة خدمات المسؤول (الطلبات والاعتماد) للموافقة عليه أو رفضه.');
+            }
         }
 
         function openAdminLoginArea() {
