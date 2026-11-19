@@ -605,7 +605,7 @@
                 <div class="border-t border-slate-800 pt-4 space-y-4">
                     <h5 class="font-bold text-xs text-slate-300">إدارة وتعديل وحذف العروض، الوظائف، والأشخاص المسجلين في الدليل:</h5>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div id="adminManageApprovedGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- العروض -->
                         <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-2">
                             <h6 class="font-bold text-primary text-[11px]">العروض الحالية:</h6>
@@ -2746,22 +2746,34 @@
             
             const structureBtn = document.getElementById('admTabBtn_structure');
             const pinsBtn = document.getElementById('admTabBtn_pins');
+            const servicesBtn = document.getElementById('admTabBtn_services');
+            const approvalsBtn = document.getElementById('admTabBtn_approvals');
             const quickCatManager = document.getElementById('adminQuickCategoriesManager');
             const addCatDirectBtn = document.querySelector('button[onclick="openAddCategoryModal()"]');
+            const manageApprovedSection = document.getElementById('adminManageApprovedGrid') ? document.getElementById('adminManageApprovedGrid').parentElement : null;
 
             if (isSuperAdmin) {
                 if (structureBtn) structureBtn.classList.remove('hidden');
                 if (pinsBtn) pinsBtn.classList.remove('hidden');
+                if (servicesBtn) {
+                    servicesBtn.innerHTML = '<i class="fa-solid fa-toolbox ml-1.5"></i> الإضافة والبنود';
+                }
                 if (quickCatManager && quickCatManager.parentElement) quickCatManager.parentElement.classList.remove('hidden');
                 if (addCatDirectBtn) addCatDirectBtn.classList.remove('hidden');
+                if (manageApprovedSection) manageApprovedSection.classList.remove('hidden');
                 renderCategoriesTreeForAdmin();
                 renderAdminDirectoryItemsManager();
                 renderSupervisorsList();
             } else {
+                // تقييد لوحة المشرف العادي تماماً
                 if (structureBtn) structureBtn.classList.add('hidden');
                 if (pinsBtn) pinsBtn.classList.add('hidden');
                 if (quickCatManager && quickCatManager.parentElement) quickCatManager.parentElement.classList.add('hidden');
                 if (addCatDirectBtn) addCatDirectBtn.classList.add('hidden');
+                if (manageApprovedSection) manageApprovedSection.classList.add('hidden');
+                if (servicesBtn) {
+                    servicesBtn.innerHTML = '<i class="fa-solid fa-user-plus ml-1.5"></i> إضافة جهة اتصال';
+                }
                 switchAdminSubTab('approvals');
             }
             renderAdminApprovalTable();
@@ -2769,6 +2781,11 @@
         }
 
         function switchAdminSubTab(subName) {
+            const isSuperAdmin = currentLoggedInAdmin && currentLoggedInAdmin.role === 'super_admin';
+            // منع المشرف العادي من فتح تبويبات البنود أو الـ PIN
+            if (!isSuperAdmin && (subName === 'pins' || subName === 'structure')) {
+                return;
+            }
             document.querySelectorAll('.admin-sub-tab').forEach(el => el.classList.add('hidden'));
             document.getElementById('admSub_' + subName).classList.remove('hidden');
             ['services', 'pins', 'approvals', 'structure'].forEach(btn => {
