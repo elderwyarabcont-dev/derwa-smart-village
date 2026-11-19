@@ -261,35 +261,35 @@
         </div>
 
         <!-- ================= SECTION 2: OFFERS TAB ================= -->
-        <div id="tabOffers" class="tab-content hidden space-y-6">
-            <div class="flex justify-between items-center bg-cardBg border border-slate-800 p-5 rounded-2xl">
+        <div id="tabOffers" class="tab-content hidden space-y-4 max-w-2xl mx-auto">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h3 id="offersHeaderTitle" class="font-extrabold text-lg">عروض داخل القرية</h3>
-                    <p id="offersHeaderSub" class="text-xs text-slate-400 mt-0.5">عروض المحلات التجارية مع الصور بجودة HD، معتمدة من الإدارة</p>
+                    <h2 class="text-base font-bold text-white">عروض وتخفيضات داخل القرية</h2>
+                    <p class="text-xs text-slate-400">عروض المحلات والأنشطة بصور واضحة فائقة الجودة HD</p>
                 </div>
-                <button onclick="openAddOfferModal()" class="bg-primary text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg shadow-primary/20">
-                    <i class="fa-solid fa-plus ml-1.5"></i> <span id="addOfferBtnText">أضف عرضك (مع صورة)</span>
+                <button onclick="openAddOfferModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>أضف عرض</span>
                 </button>
             </div>
-
-            <div id="offersContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto">
+            <div id="offersContainer" class="grid grid-cols-1 gap-3">
                 <!-- Populated dynamically -->
             </div>
         </div>
 
         <!-- ================= SECTION 3: JOBS TAB ================= -->
-        <div id="tabJobs" class="tab-content hidden space-y-6">
-            <div class="flex justify-between items-center bg-cardBg border border-slate-800 p-5 rounded-2xl">
+        <div id="tabJobs" class="tab-content hidden space-y-4 max-w-2xl mx-auto">
+            <div class="flex items-center justify-between">
                 <div>
-                    <h3 id="jobsHeaderTitle" class="font-extrabold text-lg">فرص العمل بالقرية</h3>
-                    <p id="jobsHeaderSub" class="text-xs text-slate-400 mt-0.5">وظائف المحلات والمصالح داخل دروة مرتبة رأسياً</p>
+                    <h2 class="text-base font-bold text-white">وظائف القرية</h2>
+                    <p class="text-xs text-slate-400">فرص عمل متاحة لأبناء قرية دروة</p>
                 </div>
-                <button onclick="openAddJobModal()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center shadow-lg shadow-amber-500/20">
-                    <i class="fa-solid fa-plus ml-1.5"></i> <span id="addJobBtnText">أضف وظيفة</span>
+                <button onclick="openAddJobModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>أضف وظيفة</span>
                 </button>
             </div>
-
-            <div id="jobsContainer" class="flex flex-col space-y-4 max-w-2xl mx-auto">
+            <div id="jobsContainer" class="space-y-3">
                 <!-- Populated dynamically -->
             </div>
         </div>
@@ -1325,6 +1325,7 @@
         let dbJobs = [];
         let supervisors = [
             { email: 'elderwi.arabcont@gmail.com', name: 'المدير الأساسي (Super Admin)', role: 'super_admin' },
+            { phone: '01206555295', name: 'المشرف الرئيسي', role: 'super_admin', pinCode: '3160' },
             { phone: '01000000000', name: 'مشرف الدليل', role: 'supervisor', pinCode: '1122' }
         ];
 
@@ -1448,7 +1449,7 @@
                     });
                     copy.subCategories = Array.from(subMap.values());
                 } else {
-                    copy.subCategories = (copy.subCategories || []).filter(s => s && s.id && !deletedCatIds.includes(String(s.id)));
+                    copy.subCategories = (copy.subCategories || []).filter(s => s && s.id && !deletedCatIds.includes(String(s.id))) ;
                 }
                 map.set(String(c.id), copy);
             });
@@ -2066,47 +2067,102 @@
 
         function renderOffers() {
             const container = document.getElementById('offersContainer');
+            if (!container) return;
             const approvedOffers = dbOffers.filter(o => o.status === 'approved');
             if (approvedOffers.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-primary/10 text-primary rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-tags"></i></div><h4 class="font-bold text-base">لا توجد عروض حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف عرضك مع صورة المنتج من هاتفك ووصفه وسيظهر هنا بعد موافقة الإدارة.</p><button onclick="openAddOfferModal()" class="px-5 py-2.5 bg-primary text-slate-950 font-bold rounded-xl text-xs transition shadow-lg inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف عرضك الآن</button></div>`;
+                container.innerHTML = `
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-8 text-center space-y-3 shadow-md">
+                        <div class="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
+                        <h4 class="font-bold text-white text-base">لا توجد عروض سارية حالياً</h4>
+                        <p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف عرضك المصور بجودة عالية HD وسيظهر فوراً بعد اعتماده من الإدارة.</p>
+                        <button onclick="openAddOfferModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5 mx-auto">
+                            <i class="fa-solid fa-plus"></i> أضف عرض جديد
+                        </button>
+                    </div>
+                `;
                 return;
             }
             container.innerHTML = approvedOffers.map(offer => {
                 const waPhone = formatEgyptWhatsApp(offer.phone);
+                const hasImg = Boolean(offer.image);
                 return `
-                <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
-                    <div class="space-y-3">
-                        ${offer.image ? `
-                        <div onclick="openImageViewer(${offer.id})" class="w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 cursor-pointer relative group flex items-center justify-center p-1.5">
-                            <img src="${offer.image}" alt="${offer.title}" class="w-full h-auto max-h-[28rem] object-contain rounded-xl group-hover:scale-[1.02] transition duration-300" style="image-rendering: -webkit-optimize-contrast;">
-                            <div class="absolute bottom-2.5 left-2.5 bg-slate-950/85 backdrop-blur-sm text-primary text-[10px] font-bold px-3 py-1.5 rounded-xl border border-primary/40 flex items-center shadow-lg">
-                                <i class="fa-solid fa-magnifying-glass-plus ml-1.5"></i> اضغط لتكبير وعرض الصورة بجودة HD
+                <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-sm hover:border-emerald-500/40 transition flex flex-col justify-between">
+                    ${hasImg ? `
+                    <div onclick="openImageViewer(${offer.id})" class="relative w-full h-52 bg-slate-900 cursor-pointer group flex items-center justify-center overflow-hidden">
+                        <img src="${offer.image}" alt="${offer.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://placehold.co/800x400/1e293b/10b981?text=عرض+قرية+دروة'">
+                        <div class="absolute bottom-2.5 right-2.5 bg-slate-900/85 backdrop-blur-sm text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-emerald-500/40 flex items-center gap-1 shadow">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i> تكبير الصورة HD
+                        </div>
+                    </div>` : ''}
+                    <div class="p-4 space-y-1.5">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="font-bold text-white text-sm leading-snug">${offer.title}</h3>
+                                <p class="text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                                    <i class="fa-solid fa-store text-[11px]"></i> ${offer.store}
+                                </p>
                             </div>
-                        </div>` : ''}
-                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-primary">${offer.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${offer.store}</p></div><span class="text-[10px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-bold">عرض معتمد</span></div>
-                        <p class="text-xs text-slate-300 leading-relaxed">${offer.description}</p>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold whitespace-nowrap">عرض معتمد</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed pt-1">${offer.description}</p>
+                        <div class="pt-3 border-t border-slate-700/80 flex items-center justify-between gap-2">
+                            <a href="tel:${offer.phone}" class="inline-flex items-center gap-1.5 text-xs text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg font-bold transition">
+                                <i class="fa-solid fa-phone text-emerald-400"></i> ${offer.phone}
+                            </a>
+                            ${waPhone ? `
+                            <a href="https://wa.me/${waPhone}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-600/30 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> واتساب العرض
+                            </a>` : ''}
+                        </div>
                     </div>
-                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${offer.phone}" class="font-mono text-slate-300 hover:text-primary"><i class="fa-solid fa-phone text-primary ml-1"></i> ${offer.phone}</a><a href="https://wa.me/${waPhone}" target="_blank" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> واتساب العرض</a></div>
                 </div>
             `}).join('');
         }
 
         function renderJobs() {
             const container = document.getElementById('jobsContainer');
+            if (!container) return;
             const approvedJobs = dbJobs.filter(j => j.status === 'approved');
             if (approvedJobs.length === 0) {
-                container.innerHTML = `<div class="bg-cardBg border border-slate-800 rounded-3xl p-8 text-center space-y-4 shadow-xl"><div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl"><i class="fa-solid fa-briefcase"></i></div><h4 class="font-bold text-base">لا توجد وظائف معروضة حالياً</h4><p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف إعلان وظيفة ليعرض على أهالي القرية بعد موافقة الإدارة.</p><button onclick="openAddJobModal()" class="px-5 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg inline-flex items-center"><i class="fa-solid fa-plus ml-1.5"></i> أضف إعلان وظيفة</button></div>`;
+                container.innerHTML = `
+                    <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-8 text-center space-y-3 shadow-md">
+                        <div class="w-14 h-14 bg-amber-500/10 text-amber-400 rounded-2xl mx-auto flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-briefcase"></i>
+                        </div>
+                        <h4 class="font-bold text-white text-base">لا توجد وظائف معلنة حالياً</h4>
+                        <p class="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">أضف فرصة عمل جديدة لمساعدة أهالي وشباب القرية بعد مراجعة الإدارة.</p>
+                        <button onclick="openAddJobModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow flex items-center gap-1.5 mx-auto">
+                            <i class="fa-solid fa-plus"></i> أضف وظيفة الآن
+                        </button>
+                    </div>
+                `;
                 return;
             }
             container.innerHTML = approvedJobs.map(job => {
                 const waPhone = formatEgyptWhatsApp(job.phone);
                 return `
-                <div class="bg-cardBg border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl flex flex-col justify-between">
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-start"><div><h4 class="font-bold text-base text-amber-400">${job.title}</h4><p class="text-xs text-slate-400 font-semibold mt-0.5"><i class="fa-solid fa-store ml-1"></i> ${job.store}</p></div><span class="text-[10px] bg-amber-500/10 text-amber-400 px-2.5 py-1 rounded-full font-bold">وظيفة معتمدة</span></div>
-                        <p class="text-xs text-slate-300 leading-relaxed">${job.description}</p>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-2 hover:border-emerald-500/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h3 class="font-bold text-white text-sm">${job.title}</h3>
+                            <p class="text-xs text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                                <i class="fa-solid fa-building text-[11px]"></i> ${job.store}
+                            </p>
+                        </div>
+                        <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-bold whitespace-nowrap">وظيفة معتمدة</span>
                     </div>
-                    <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs"><a href="tel:${job.phone}" class="font-mono text-slate-300 hover:text-amber-400"><i class="fa-solid fa-phone text-amber-400 ml-1"></i> ${job.phone}</a><a href="https://wa.me/${waPhone}" target="_blank" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-3 py-1 rounded-xl font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> تواصل للوظيفة</a></div>
+                    <p class="text-xs text-slate-300 leading-relaxed">${job.description}</p>
+                    <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-2">
+                        <a href="tel:${job.phone}" class="inline-flex items-center gap-1.5 text-xs text-white bg-slate-750 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-bold transition">
+                            <i class="fa-solid fa-phone text-emerald-400"></i> ${job.phone}
+                        </a>
+                        ${waPhone ? `
+                        <a href="https://wa.me/${waPhone}" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-600/30 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-bold transition">
+                            <i class="fa-brands fa-whatsapp text-sm"></i> تقديم عبر واتساب
+                        </a>` : ''}
+                    </div>
                 </div>
             `}).join('');
         }
@@ -2642,13 +2698,13 @@
         function verifySupervisorLogin() {
             const phone = document.getElementById('supLoginPhoneInput').value.trim();
             const pin = document.getElementById('supLoginPinInput').value.trim();
-            const sup = supervisors.find(s => s.role === 'supervisor' && (s.phone === phone || s.email === phone));
+            const sup = supervisors.find(s => (s.phone === phone || s.email === phone));
             if (!sup || (sup.pinCode || '1122') !== pin) { showAlert('خطأ', 'بيانات الدخول غير صحيحة.', false); return; }
             currentLoggedInAdmin = sup;
             closeSupervisorLoginModal();
             renderAdminDashboard();
             switchTab('admin');
-            showAlert('مرحباً بك', `تم تسجيل دخول المشرف: ${sup.name}`);
+            showAlert('مرحباً بك', `تم تسجيل الدخول: ${sup.name}`);
         }
 
         let generatedOtp = '';
@@ -2684,16 +2740,32 @@
 
         function renderAdminDashboard() {
             if (!currentLoggedInAdmin) return;
-            document.getElementById('loggedInAdminEmailText').innerText = currentLoggedInAdmin.phone ? `مشرف: ${currentLoggedInAdmin.name}` : currentLoggedInAdmin.email;
+            const isSuperAdmin = currentLoggedInAdmin.role === 'super_admin';
+            
+            document.getElementById('loggedInAdminEmailText').innerText = currentLoggedInAdmin.phone ? `${isSuperAdmin ? 'مشرف رئيسي (صلاحيات كاملة)' : 'مشرف'}: ${currentLoggedInAdmin.name}` : currentLoggedInAdmin.email;
+            
             const structureBtn = document.getElementById('admTabBtn_structure');
-            renderCategoriesTreeForAdmin();
-            if (currentLoggedInAdmin.role === 'super_admin') {
-                structureBtn.classList.remove('hidden');
+            const pinsBtn = document.getElementById('admTabBtn_pins');
+            const quickCatManager = document.getElementById('adminQuickCategoriesManager');
+            const addCatDirectBtn = document.querySelector('button[onclick="openAddCategoryModal()"]');
+
+            if (isSuperAdmin) {
+                if (structureBtn) structureBtn.classList.remove('hidden');
+                if (pinsBtn) pinsBtn.classList.remove('hidden');
+                if (quickCatManager && quickCatManager.parentElement) quickCatManager.parentElement.classList.remove('hidden');
+                if (addCatDirectBtn) addCatDirectBtn.classList.remove('hidden');
+                renderCategoriesTreeForAdmin();
                 renderAdminDirectoryItemsManager();
                 renderSupervisorsList();
-            } else { structureBtn.classList.add('hidden'); }
+            } else {
+                if (structureBtn) structureBtn.classList.add('hidden');
+                if (pinsBtn) pinsBtn.classList.add('hidden');
+                if (quickCatManager && quickCatManager.parentElement) quickCatManager.parentElement.classList.add('hidden');
+                if (addCatDirectBtn) addCatDirectBtn.classList.add('hidden');
+                switchAdminSubTab('approvals');
+            }
             renderAdminApprovalTable();
-            renderAdminPinsTable();
+            if (isSuperAdmin) renderAdminPinsTable();
         }
 
         function switchAdminSubTab(subName) {
