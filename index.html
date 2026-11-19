@@ -3443,17 +3443,22 @@
         function openDeveloperModal() { document.getElementById('developerModal').classList.remove('hidden'); }
         function closeDeveloperModal() { document.getElementById('developerModal').classList.add('hidden'); }
         function openFacebookProfile() {
-            const webUrl = "https://www.facebook.com/share/1Fgn4vGEKP/";
-            const appUrl = "fb://facewebmodal/f?href=" + encodeURIComponent(webUrl);
+            const fbProfileUrl = "https://www.facebook.com/elderwy2014";
             
-            // محاولة فتح التطبيق أولاً، والتحويل للمتصفح إذا لم يكن التطبيق مثبتاً
-            const now = Date.now();
-            window.location.href = appUrl;
-            setTimeout(() => {
-                if (Date.now() - now < 1500) {
-                    window.open(webUrl, '_blank');
-                }
-            }, 600);
+            // استخدام قائمة الخيارات الرسمية للهاتف لتظهر له خيارات الفتح ومن ضمنها تطبيق الفيسبوك
+            if (navigator.share) {
+                navigator.share({
+                    title: 'الصفحة الشخصية لمطور التطبيق م/ محمد محمود اسماعيل',
+                    text: 'تواصل مع مطور التطبيق عبر فيسبوك:',
+                    url: fbProfileUrl
+                }).catch(() => {
+                    // في حال إلغاء المستخدم أو حدوث خطأ يتم فتح الرابط بشكل طبيعي
+                    window.open(fbProfileUrl, '_blank');
+                });
+            } else {
+                // للأجهزة التي لا تدعم قائمة المشاركة يتم فتح الرابط ليخيره المتصفح
+                window.open(fbProfileUrl, '_blank');
+            }
         }
         function openAboutModal() { document.getElementById('aboutModal').classList.remove('hidden'); }
         function closeAboutModal() { document.getElementById('aboutModal').classList.add('hidden'); }
