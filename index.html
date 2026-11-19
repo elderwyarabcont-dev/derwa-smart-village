@@ -158,42 +158,54 @@
                 </div>
             </div>
 
-            <!-- Admin Messages & Quick Banners -->
-            <div class="space-y-3">
-                <div onclick="switchTab('more')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-bullhorn"></i>
+            <!-- Admin Messages & Quick Banners: Interactive Horizontal Grid (Side-by-side, 3 columns) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <!-- 1. شاشة رسائل الإدارة التفاعلية والتعريف بخدمات التطبيق -->
+                <div onclick="switchTab('more')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-3.5 cursor-pointer transition shadow-lg group relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b border-slate-800/70 pb-2 mb-2">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <div class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-bullhorn"></i>
+                            </div>
+                            <h4 id="bannerAdminMsgTitle" class="font-bold text-xs text-slate-200 group-hover:text-primary transition truncate">رسائل وإرشادات الإدارة</h4>
                         </div>
-                        <div>
-                            <h4 id="bannerAdminMsgTitle" class="font-bold text-sm">رسائل الإدارة</h4>
-                        </div>
+                        <span id="homeAdminCountBadge" class="text-[9px] bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full font-mono">خدمات التطبيق</span>
                     </div>
-                    <span id="homeAdminCountBadge" class="text-xs bg-primary/15 text-primary font-bold px-2.5 py-1 rounded-full">1 رسالة</span>
+                    <div id="homeAdminTicker" class="min-h-[58px] flex items-center transition-all duration-500 text-[11px] text-slate-300 leading-relaxed">
+                        <!-- يتم التبديل هنا كل 3 ثوانٍ تلقائياً -->
+                    </div>
                 </div>
 
-                <div onclick="switchTab('offers')" class="bg-cardBg border border-slate-800 hover:border-primary/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-tags"></i>
+                <!-- 2. شاشة عروض القرية التفاعلية -->
+                <div onclick="switchTab('offers')" class="bg-cardBg border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-3.5 cursor-pointer transition shadow-lg group relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b border-slate-800/70 pb-2 mb-2">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-tags"></i>
+                            </div>
+                            <h4 id="bannerOffersTitle" class="font-bold text-xs text-slate-200 group-hover:text-emerald-400 transition truncate">عروض داخل القرية</h4>
                         </div>
-                        <div>
-                            <h4 id="bannerOffersTitle" class="font-bold text-sm">عروض داخل القرية</h4>
-                        </div>
+                        <span id="homeOffersCountBadge" class="text-[9px] bg-emerald-500/15 text-emerald-400 font-bold px-2 py-0.5 rounded-full font-mono">0 عرض</span>
                     </div>
-                    <span id="homeOffersCountBadge" class="text-xs bg-primary/15 text-primary font-bold px-2.5 py-1 rounded-full">0 عرض</span>
+                    <div id="homeOffersTicker" class="min-h-[58px] flex items-center transition-all duration-500 text-[11px] text-slate-300 leading-relaxed">
+                        <!-- يتم التبديل هنا كل 3 ثوانٍ تلقائياً -->
+                    </div>
                 </div>
 
-                <div onclick="switchTab('jobs')" class="bg-cardBg border border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 flex items-center justify-between cursor-pointer transition shadow-lg group">
-                    <div class="flex items-center space-x-3 space-x-reverse">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
-                            <i class="fa-solid fa-briefcase"></i>
+                <!-- 3. شاشة وظائف القرية التفاعلية -->
+                <div onclick="switchTab('jobs')" class="bg-cardBg border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 cursor-pointer transition shadow-lg group relative overflow-hidden flex flex-col justify-between">
+                    <div class="flex items-center justify-between border-b border-slate-800/70 pb-2 mb-2">
+                        <div class="flex items-center space-x-2 space-x-reverse">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-briefcase"></i>
+                            </div>
+                            <h4 id="bannerJobsTitle" class="font-bold text-xs text-slate-200 group-hover:text-amber-400 transition truncate">وظائف داخل القرية</h4>
                         </div>
-                        <div>
-                            <h4 id="bannerJobsTitle" class="font-bold text-sm">وظائف داخل القرية</h4>
-                        </div>
+                        <span id="homeJobsCountBadge" class="text-[9px] bg-amber-500/15 text-amber-400 font-bold px-2 py-0.5 rounded-full font-mono">0 وظيفة</span>
                     </div>
-                    <span id="homeJobsCountBadge" class="text-xs bg-amber-500/15 text-amber-400 font-bold px-2.5 py-1 rounded-full">0 وظيفة</span>
+                    <div id="homeJobsTicker" class="min-h-[58px] flex items-center transition-all duration-500 text-[11px] text-slate-300 leading-relaxed">
+                        <!-- يتم التبديل هنا كل 3 ثوانٍ تلقائياً -->
+                    </div>
                 </div>
             </div>
 
@@ -574,9 +586,11 @@
                 <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
                     <div class="flex items-center space-x-2 space-x-reverse text-blue-400">
                         <i class="fa-solid fa-key text-lg"></i>
-                        <h4 class="font-extrabold text-base">إدارة الأكواد السرية (PIN Code) للجهات ذات زر الحجز</h4>
+                        <h4 class="font-extrabold text-base">إدارة وإضافة وتعديل الأكواد السرية (PIN Code) للجهات ذات الحجز</h4>
                     </div>
+                    <span class="text-[10px] bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full font-bold">مزامنة سحابية فورية</span>
                 </div>
+                <p class="text-xs text-slate-400">يقتصر هذا الجدول حصرياً على الجهات المفعل لها زر الحجز وجداول المواعيد (عيادات وأطباء وميكروباصات سفر) لتعيين وتعديل الـ PIN كود الخاص بها لدخول لوحة تحكم الحجوزات.</p>
                 <div id="adminPinsTableContainer" class="space-y-3 pt-2"></div>
             </div>
 
@@ -1071,9 +1085,9 @@
                     <p>مع تحياتي : م/ محمد محمود اسماعيل - رئيس قسم مساحة بشركة المقاولون العرب</p>
                     <p class="font-mono mt-1 text-slate-200">واتساب / 01144336625</p>
                     <div class="pt-2">
-                        <a href="https://www.facebook.com/share/1Fgn4vGEKP/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg">
+                        <button onclick="openFacebookProfile()" class="inline-flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition shadow-lg cursor-pointer">
                             <i class="fa-brands fa-facebook text-base ml-2"></i> التواصل عبر صفحة الفيسبوك الشخصية
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1323,6 +1337,31 @@
         let dbItems = JSON.parse(JSON.stringify(defaultItems));
         let dbOffers = [];
         let dbJobs = [];
+        let dbAdminMessages = [];
+        // الأخبار التوضيحية المستمرة للتعريف بخدمات التطبيق عند عدم وجود رسائل مباشرة
+        const appServicesShowcaseNews = [
+            {
+                title: "خدمة المواصلات والمواقف",
+                desc: "تتيح متابعة سيارات وميكروباصات السفر ومعرفة خطوط السير والمقاعد المتاحة مع إمكانية حجز المقعد مسبقاً قبل التحرك للموقف."
+            },
+            {
+                title: "خدمة المحلات التجارية",
+                desc: "دليل رقمي يضم كافة محلات البقالة، الملابس، الحدايد، ومواد البناء بالقرية لتسهيل الوصول لكل ما يحتاجه بيتك."
+            },
+            {
+                title: "خدمة الأطباء والعيادات",
+                desc: "تصفح التخصصات الطبية المختلفة في القرية مع إمكانية حجز المواعيد إلكترونياً وتقييم مستوى الخدمة بالنجوم."
+            },
+            {
+                title: "خدمة الحرفيين والصنائعية",
+                desc: "تسهيل الوصول لأصحاب الحرف المتخصصة كأعمال السباكة والكهرباء والنجارة والنقاشة والمحارة بكل يسر."
+            },
+            {
+                title: "خدمة الصيدليات ومعامل التحاليل",
+                desc: "دليل سريع لصيدليات القرية ومعامل التحاليل للتواصل السريع في حالات الطوارئ وطلب الأدوية."
+            }
+        ];
+        let tickerIndices = { admin: 0, offers: 0, jobs: 0 };
         let supervisors = [
             { email: 'elderwi.arabcont@gmail.com', name: 'المدير الأساسي (Super Admin)', role: 'super_admin' },
             { phone: '01206555295', name: 'المشرف الرئيسي', role: 'super_admin', pinCode: '3160' },
@@ -1864,6 +1903,107 @@
             else { badge.classList.add('hidden'); }
         }
 
+        function renderHomeTickers() {
+            // 1. شاشة رسائل الإدارة والتعريف بخدمات التطبيق
+            const adminTicker = document.getElementById('homeAdminTicker');
+            const adminCountBadge = document.getElementById('homeAdminCountBadge');
+            if (adminTicker) {
+                // إذا لم توجد رسائل مخصصة مسجلة من الإدارة، يتم عرض الأخبار التوضيحية لخدمات التطبيق
+                const messagesToDisplay = (dbAdminMessages && dbAdminMessages.length > 0) ? dbAdminMessages : appServicesShowcaseNews;
+                const isCustomMsg = (dbAdminMessages && dbAdminMessages.length > 0);
+
+                const currentIdx = tickerIndices.admin % messagesToDisplay.length;
+                const msg = messagesToDisplay[currentIdx];
+                
+                if (adminCountBadge) {
+                    adminCountBadge.innerText = isCustomMsg ? `${messagesToDisplay.length} رسالة` : `خدمة [${currentIdx + 1}/${messagesToDisplay.length}]`;
+                }
+
+                adminTicker.innerHTML = `
+                    <div class="w-full flex items-start justify-between gap-1.5 animate-fadeIn">
+                        <div class="space-y-0.5">
+                            <p class="font-bold text-primary text-[11px] leading-tight">
+                                <i class="fa-solid fa-circle-info ml-1 text-[10px]"></i> ${msg.title}:
+                            </p>
+                            <p class="text-slate-300 line-clamp-2 text-[10.5px] leading-snug">${msg.desc}</p>
+                        </div>
+                        <i class="fa-solid fa-angle-left text-slate-500 text-xs flex-shrink-0 mt-1"></i>
+                    </div>
+                `;
+            }
+
+            // 2. شاشة عروض القرية
+            const offersTicker = document.getElementById('homeOffersTicker');
+            const offersCountBadge = document.getElementById('homeOffersCountBadge');
+            const approvedOffers = dbOffers.filter(o => o.status === 'approved');
+            if (offersTicker) {
+                if (approvedOffers.length === 0) {
+                    offersTicker.innerHTML = `<span class="text-slate-500 text-[10.5px]">لا توجد عروض سارية حالياً — اضغط لإضافة عرضك مع صورة</span>`;
+                    if (offersCountBadge) offersCountBadge.innerText = '0 عرض';
+                } else {
+                    const currentIdx = tickerIndices.offers % approvedOffers.length;
+                    const offer = approvedOffers[currentIdx];
+                    if (offersCountBadge) offersCountBadge.innerText = `${approvedOffers.length} عرض`;
+                    offersTicker.innerHTML = `
+                        <div class="w-full flex items-center justify-between gap-1.5 animate-fadeIn">
+                            <div class="flex items-center gap-2 truncate">
+                                ${offer.image ? `<img src="${offer.image}" alt="" class="w-8 h-8 rounded-lg object-cover border border-slate-700 flex-shrink-0">` : ''}
+                                <div class="truncate">
+                                    <p class="font-bold text-emerald-400 truncate text-[11px]">[${currentIdx + 1}/${approvedOffers.length}] ${offer.title}</p>
+                                    <p class="text-slate-300 text-[10px] truncate">${offer.store} - ${offer.description}</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-angle-left text-slate-500 text-xs flex-shrink-0"></i>
+                        </div>
+                    `;
+                }
+            }
+
+            // 3. شاشة وظائف القرية
+            const jobsTicker = document.getElementById('homeJobsTicker');
+            const jobsCountBadge = document.getElementById('homeJobsCountBadge');
+            const approvedJobs = dbJobs.filter(j => j.status === 'approved');
+            if (jobsTicker) {
+                if (approvedJobs.length === 0) {
+                    jobsTicker.innerHTML = `<span class="text-slate-500 text-[10.5px]">لا توجد وظائف معلنة حالياً — اضغط لنشر فرصة عمل</span>`;
+                    if (jobsCountBadge) jobsCountBadge.innerText = '0 وظيفة';
+                } else {
+                    const currentIdx = tickerIndices.jobs % approvedJobs.length;
+                    const job = approvedJobs[currentIdx];
+                    if (jobsCountBadge) jobsCountBadge.innerText = `${approvedJobs.length} وظيفة`;
+                    jobsTicker.innerHTML = `
+                        <div class="w-full flex items-center justify-between gap-1.5 animate-fadeIn">
+                            <div class="truncate">
+                                <p class="font-bold text-amber-400 truncate text-[11px]">[${currentIdx + 1}/${approvedJobs.length}] ${job.title}</p>
+                                <p class="text-slate-300 text-[10px] truncate">${job.store} - ${job.description}</p>
+                            </div>
+                            <i class="fa-solid fa-angle-left text-slate-500 text-xs flex-shrink-0"></i>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // دالة التبديل الدوري كل 6 ثوانٍ
+        function startTickersLoop() {
+            setInterval(() => {
+                const approvedOffers = dbOffers.filter(o => o.status === 'approved');
+                const approvedJobs = dbJobs.filter(j => j.status === 'approved');
+                const messagesToDisplay = (dbAdminMessages && dbAdminMessages.length > 0) ? dbAdminMessages : appServicesShowcaseNews;
+
+                if (messagesToDisplay.length > 1) {
+                    tickerIndices.admin = (tickerIndices.admin + 1) % messagesToDisplay.length;
+                }
+                if (approvedOffers.length > 1) {
+                    tickerIndices.offers = (tickerIndices.offers + 1) % approvedOffers.length;
+                }
+                if (approvedJobs.length > 1) {
+                    tickerIndices.jobs = (tickerIndices.jobs + 1) % approvedJobs.length;
+                }
+                renderHomeTickers();
+            }, 6000);
+        }
+
         function renderHomeCategories() {
             const approvedItemsCount = dbItems.filter(i => i.status === 'approved').length;
             const approvedOffersCount = dbOffers.filter(o => o.status === 'approved').length;
@@ -1876,10 +2016,7 @@
             const statServicesEl = document.getElementById('statTotalServices');
             if (statServicesEl) statServicesEl.innerText = approvedItemsCount;
 
-            const homeOffersBadge = document.getElementById('homeOffersCountBadge');
-            if (homeOffersBadge) homeOffersBadge.innerText = `${approvedOffersCount} عرض`;
-            const homeJobsBadge = document.getElementById('homeJobsCountBadge');
-            if (homeJobsBadge) homeJobsBadge.innerText = `${approvedJobsCount} وظيفة`;
+            renderHomeTickers();
 
             const grid = document.getElementById('categoriesGrid');
             if (!grid) return;
@@ -2796,20 +2933,97 @@
 
         function renderAdminPinsTable() {
             const container = document.getElementById('adminPinsTableContainer');
-            const providers = dbItems.filter(i => i.status === 'approved' && doesItemHaveBooking(i));
-            if (providers.length === 0) { container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد جهات مفعل لها حجز</p>`; return; }
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-right text-xs"><thead class="bg-slate-950 text-slate-400 border-b border-slate-800"><tr><th class="p-3">الاسم</th><th class="p-3">الرمز السري PIN</th><th class="p-3 text-center">إجراء</th></tr></thead><tbody class="divide-y divide-slate-800">${providers.map(p => `<tr><td class="p-3 font-bold">${p.name}</td><td class="p-3"><input type="text" maxlength="4" id="pinInput_${p.id}" value="${p.pinCode || '5678'}" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold"></td><td class="p-3 text-center"><button onclick="updateProviderPin('${p.id}')" class="px-3 py-1.5 bg-blue-600 text-white font-bold rounded-lg shadow">حفظ</button></td></tr>`).join('')}</tbody></table></div>`;
+            if (!container) return;
+            // حصر القائمة حصرياً على الجهات المفعل لها زر الحجز داخل بندها الخاص
+            const bookingProviders = dbItems.filter(i => i.status === 'approved' && doesItemHaveBooking(i));
+            if (bookingProviders.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 py-4">لا توجد جهات مفعل لها بند الحجز حالياً</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">اسم الجهة (ذات الحجز)</th>
+                                <th class="p-3">القسم / البند التابع له</th>
+                                <th class="p-3">الرمز السري PIN (4 أرقام)</th>
+                                <th class="p-3 text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            ${bookingProviders.map(p => {
+                                const currentPin = p.pinCode || '';
+                                return `
+                                <tr class="hover:bg-slate-900/50 transition">
+                                    <td class="p-3 font-bold text-slate-100">
+                                        <div class="flex items-center gap-1.5">
+                                            <span>${p.name}</span>
+                                            <span class="text-[9px] bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded font-mono">حجز مفعّل</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 text-primary text-[11px] font-bold">${getCategoryAndSubLabel(p)}</td>
+                                    <td class="p-3">
+                                        <div class="flex items-center space-x-1.5 space-x-reverse">
+                                            <input type="text" maxlength="4" id="pinInput_${p.id}" value="${currentPin}" placeholder="4 أرقام" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-center font-mono text-primary font-bold focus:border-blue-500 focus:outline-none">
+                                            <button onclick="generateRandomPin('${p.id}')" title="توليد كود عشوائي" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs transition">
+                                                <i class="fa-solid fa-dice"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td class="p-3 text-center">
+                                        <div class="flex items-center justify-center space-x-1.5 space-x-reverse">
+                                            <button onclick="updateProviderPin('${p.id}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow text-xs transition flex items-center gap-1">
+                                                <i class="fa-solid fa-floppy-disk"></i> حفظ
+                                            </button>
+                                            ${currentPin ? `
+                                            <button onclick="removeProviderPin('${p.id}')" title="مسح الـ PIN" class="px-2 py-1.5 bg-red-500/20 hover:bg-red-500 hover:text-white text-red-400 font-bold rounded-lg text-xs transition">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
 
-        function updateProviderPin(itemId) {
+        function generateRandomPin(itemId) {
+            const pinInput = document.getElementById('pinInput_' + itemId);
+            if (pinInput) {
+                const random4 = Math.floor(1000 + Math.random() * 9000).toString();
+                pinInput.value = random4;
+            }
+        }
+
+        async function updateProviderPin(itemId) {
             const newPin = document.getElementById('pinInput_' + itemId).value.trim();
-            if (newPin.length !== 4) { showAlert('خطأ', 'يجب أن يكون الرمز السري 4 أرقام.', false); return; }
+            if (newPin && newPin.length !== 4) { 
+                showAlert('خطأ', 'يجب أن يكون الرمز السري مكوناً من 4 أرقام بالضبط (مثال: 5678).', false); 
+                return; 
+            }
             const item = dbItems.find(i => String(i.id) === String(itemId));
             if (item) {
                 item.pinCode = newPin;
                 item.updatedAt = Date.now();
-                syncWithCloud();
-                showAlert('تم الحفظ', 'تم تحديث الرمز السري ومزامنته سحابياً.');
+                await syncWithCloud();
+                renderAdminPinsTable();
+                showAlert('تم الحفظ بنجاح', `تم تحديث الرمز السري للجهة (${item.name}) إلى [${newPin || 'فارغ'}] ومزامنته سحابياً لجميع الهواتف.`);
+            }
+        }
+
+        async function removeProviderPin(itemId) {
+            const item = dbItems.find(i => String(i.id) === String(itemId));
+            if (item) {
+                item.pinCode = '';
+                item.updatedAt = Date.now();
+                await syncWithCloud();
+                renderAdminPinsTable();
+                showAlert('تم المسح', `تم حذف كود PIN الخاص بـ (${item.name}) بنجاح.`);
             }
         }
 
@@ -3018,6 +3232,15 @@
             document.getElementById('editItemPhone').value = item.phone || '';
             document.getElementById('editItemWhatsapp').value = item.whatsapp || '';
             document.getElementById('editItemAddress').value = item.address || '';
+            
+            // إظهار حقل الـ PIN دائماً للمسؤول مع تعبئة القيمة الحالية
+            const editPinWrapper = document.getElementById('editPinWrapper');
+            const editItemPin = document.getElementById('editItemPin');
+            if (editPinWrapper && editItemPin) {
+                editPinWrapper.classList.remove('hidden');
+                editItemPin.value = item.pinCode || '';
+            }
+
             document.getElementById('adminEditItemModal').classList.remove('hidden');
         }
         function closeAdminEditItemModal() { document.getElementById('adminEditItemModal').classList.add('hidden'); }
@@ -3041,11 +3264,18 @@
             item.phone = document.getElementById('editItemPhone').value.trim();
             item.whatsapp = formatEgyptWhatsApp(document.getElementById('editItemWhatsapp').value.trim() || item.phone);
             item.address = document.getElementById('editItemAddress').value.trim();
+            const enteredPin = document.getElementById('editItemPin') ? document.getElementById('editItemPin').value.trim() : '';
+            if (enteredPin && enteredPin.length !== 4) {
+                showAlert('خطأ', 'الرمز السري PIN يجب أن يتكون من 4 أرقام.', false);
+                return;
+            }
+            item.pinCode = enteredPin;
             item.updatedAt = Date.now();
             closeAdminEditItemModal();
             await syncWithCloud();
             renderAdminApprovalTable();
-            showAlert('تم التعديل', `تم حفظ التعديلات وربط الجهة ببند (${getCategoryAndSubLabel(item)}) سحابياً.`);
+            renderAdminPinsTable();
+            showAlert('تم التعديل', `تم حفظ بيانات الجهة وتحديث كود PIN ومزامنتها سحابياً.`);
         }
 
         async function approveSubmission(tableType, id) {
@@ -3212,6 +3442,19 @@
 
         function openDeveloperModal() { document.getElementById('developerModal').classList.remove('hidden'); }
         function closeDeveloperModal() { document.getElementById('developerModal').classList.add('hidden'); }
+        function openFacebookProfile() {
+            const webUrl = "https://www.facebook.com/share/1Fgn4vGEKP/";
+            const appUrl = "fb://facewebmodal/f?href=" + encodeURIComponent(webUrl);
+            
+            // محاولة فتح التطبيق أولاً، والتحويل للمتصفح إذا لم يكن التطبيق مثبتاً
+            const now = Date.now();
+            window.location.href = appUrl;
+            setTimeout(() => {
+                if (Date.now() - now < 1500) {
+                    window.open(webUrl, '_blank');
+                }
+            }, 600);
+        }
         function openAboutModal() { document.getElementById('aboutModal').classList.remove('hidden'); }
         function closeAboutModal() { document.getElementById('aboutModal').classList.add('hidden'); }
         function openPrivacyModal() { document.getElementById('privacyModal').classList.remove('hidden'); }
@@ -3226,9 +3469,43 @@
 
         function shareApp() { 
             const appHuaweiUrl = "https://appgallery.huawei.com/app/C119566785";
-            copyToClipboard(appHuaweiUrl); 
-            showAlert('مشاركة التطبيق', `تم نسخ رابط متجر هواوي الرسمي للتطبيق بنجاح:\n${appHuaweiUrl}`);
+            const plainText = `حمل الآن تطبيق (الدليل الذكي لقرية دروة مركز ملوي) لمتابعة مواعيد العيادات، حجز المواصلات، المحلات التجارية، والخدمات الحرفية داخل قريتنا عبر متجر هواوي الرسمي:\n${appHuaweiUrl}`;
+            const shareText = encodeURIComponent(plainText);
+            
+            // 1. استخدام خاصية المشاركة المباشرة للهاتف إن كانت مدعومة
+            if (navigator.share) {
+                navigator.share({
+                    title: 'الدليل الذكى لقرية دروة مركز ملوى',
+                    text: plainText,
+                    url: appHuaweiUrl
+                }).catch(() => {
+                    openWhatsAppDirect(shareText);
+                });
+            } else {
+                // 2. الفتح المباشر لتطبيق واتساب
+                openWhatsAppDirect(shareText);
+            }
         }
+
+        function openWhatsAppDirect(shareText) {
+            // محاولة الفتح ببروتوكول تطبيق واتساب المباشر أولاً ثم رابط الويب المعتمد
+            const waAppUri = `whatsapp://send?text=${shareText}`;
+            const waWebUri = `https://wa.me/?text=${shareText}`;
+            
+            const a = document.createElement('a');
+            a.href = waAppUri;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // كبديل احتياطي سريع في حال عدم التعرف على البروتوكول
+            setTimeout(() => {
+                window.open(waWebUri, '_blank');
+            }, 300);
+        }
+
         function copyToClipboard(text) {
             const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
             try { document.execCommand('copy'); } catch (e) {}
@@ -3243,6 +3520,7 @@
             updatePendingBadge();
             initFirebaseCloud();
             cleanupExpiredBookings();
+            startTickersLoop();
         });
     </script>
 </body>
