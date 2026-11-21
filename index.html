@@ -2857,6 +2857,278 @@
             if (modal) modal.classList.add('hidden');
         }
 
+        function calculateAverageRating(ratings) {
+            if (!ratings || !Array.isArray(ratings) || ratings.length === 0) {
+                return { avg: 5.0, count: 0 };
+            }
+            const sum = ratings.reduce((acc, r) => acc + Number(r), 0);
+            const avg = (sum / ratings.length).toFixed(1);
+            return { avg: parseFloat(avg), count: ratings.length };
+        }
+
+        function renderStarsHTML(avg, itemId) {
+            const rounded = Math.round(avg);
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                const isFilled = i <= rounded;
+                stars += `<i onclick="rateService('${itemId}', ${i})" class="fa-star ${isFilled ? 'fa-solid text-amber-400' : 'fa-regular text-slate-600'} cursor-pointer hover:scale-125 transition text-xs"></i>`;
+            }
+            return stars;
+        }
+
+        async function rateService(itemId, starValue) {
+            const item = dbItems.find(i => String(i.id) === String(itemId));
+            if (!item) return;
+
+            const ratedKey = `rated_item_${itemId}`;
+            if (localStorage.getItem(ratedKey)) {
+                showAlert('تنبيه التقييم', 'لقد قمت بتقييم هذه الخدمة مسبقاً، شكراً لمشاركتك!', false);
+                return;
+            }
+
+            if (!item.ratings || !Array.isArray(item.ratings)) {
+                item.ratings = [];
+            }
+            item.ratings.push(starValue);
+            item.updatedAt = Date.now();
+            try { localStorage.setItem(ratedKey, 'true'); } catch (e) {}
+
+            await syncWithCloud();
+            showAlert('شكراً لك', `تم تسجيل تقييمك (${starValue} نجوم) واحتسابه في متوسط تقييم الجهة بنجاح.`);
+
+            const container = document.getElementById('categoryDetailContent');
+            if (container && !document.getElementById('categoryDetailModal').classList.contains('hidden')) {
+                const cat = dbCategories.find(c => String(c.id) === String(item.mainCatId));
+                if (cat) {
+                    if (!cat.subCategories || cat.subCategories.length === 0) {
+                        renderSubCategoryItemsHTML(cat.id, 'direct', getCategoryDisplayName(cat), container);
+                    } else {
+                        const sub = cat.subCategories.find(s => String(s.id) === String(item.subCatId));
+                        const subName = sub ? getSubCategoryDisplayName(sub) : '';
+                        renderSubCategoryItemsHTML(cat.id, item.subCatId, subName, container);
+                    }
+                }
+            }
+        }
+
+        function renderSubCategoryItemsHTML(catId, subCatId, subTitle, container) {
+            if (!container) return;
+            const cat = dbCategories.find(c => String(c.id) === String(catId));
+            const sub = (cat && cat.subCategories) ? cat.subCategories.find(s => String(s.id) === String(subCatId)) : null;
+
+            const items = dbItems.filter(i => {
+                if (subCatId === 'direct') {
+                    return i.status === 'approved' && String(i.mainCatId) === String(catId);
+                }
+                return doesItemMatchSubCategory(i, catId, sub);
+            });
+
+            const hasBackBtn = cat && cat.subCategories && cat.subCategories.length > 0;
+
+            let html = `
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            ${hasBackBtn ? `<button onclick="openCategoryDetail('${catId}')" class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center justify-center transition"><i class="fa-solid fa-arrow-right"></i></button>` : ''}
+                            <h4 class="font-bold text-sm text-primary flex items-center gap-1.5">
+                                <i class="fa-solid fa-folder-open text-xs"></i>
+                                <span>${subTitle}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">(${items.length})</span>
+                            </h4>
+                        </div>
+                    </div>
+            `;
+
+            if (items.length === 0) {
+                html += `
+                    <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 text-center space-y-2">
+                        <i class="fa-solid fa-address-book text-slate-600 text-3xl"></i>
+                        <p class="text-xs text-slate-400 font-bold">${currentLang === 'en' ? 'No registered contacts under this section yet' : 'لا توجد جهات اتصال مسجلة تحت هذا البند حالياً'}</p>
+                        <p class="text-[11px] text-slate-500">${currentLang === 'en' ? 'You can suggest adding a provider through "Join Us"' : 'يمكنك اقتراح وإضافة شخص أو عيادة عبر تبويب "انضم إلينا"'}</p>
+                    </div>
+                </div>`;
+                container.innerHTML = html;
+                return;
+            }
+
+            html += `<div class="space-y-3">`;
+
+            items.forEach(item => {
+                const waPhone = formatEgyptWhatsApp(item.whatsapp || item.phone);
+                const ratingInfo = calculateAverageRating(item.ratings);
+                const hasBooking = doesItemHaveBooking(item);
+                const isTransport = item.mainCatId === 'transport';
+
+                html += `
+                    <div class="bg-slate-950 border border-slate-800 hover:border-primary/50 p-4 rounded-2xl space-y-3 shadow transition">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h5 class="font-bold text-sm text-white flex items-center gap-2">
+                                    <span>${item.name}</span>
+                                    ${hasBooking ? `<span class="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-mono font-bold">${currentLang === 'en' ? 'Booking Available' : 'حجز متاح'}</span>` : ''}
+                                </h5>
+                                ${item.address ? `<p class="text-xs text-slate-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-location-dot text-primary text-[10px]"></i> ${item.address}</p>` : ''}
+                            </div>
+                            <div class="text-left flex-shrink-0">
+                                <div class="flex items-center gap-1">
+                                    ${renderStarsHTML(ratingInfo.avg, item.id)}
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-mono block mt-0.5">${ratingInfo.avg} (${ratingInfo.count} ${currentLang === 'en' ? 'reviews' : 'تقييم'})</span>
+                            </div>
+                        </div>
+
+                        ${item.notes ? `
+                        <div class="bg-slate-900/80 border border-slate-800/80 rounded-xl p-2.5 text-[11px] text-slate-300 flex items-start gap-2">
+                            <i class="fa-solid fa-circle-info text-amber-400 text-xs mt-0.5 flex-shrink-0"></i>
+                            <span class="leading-relaxed">${item.notes}</span>
+                        </div>` : ''}
+
+                        <div class="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <a href="tel:${item.phone}" class="px-3 py-1.5 bg-primary/15 hover:bg-primary text-primary hover:text-slate-950 rounded-xl font-bold font-mono text-xs transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-phone"></i>
+                                    <span>${item.phone}</span>
+                                </a>
+                                ${waPhone ? `
+                                <a href="https://wa.me/${waPhone}" target="_blank" class="w-8 h-8 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white flex items-center justify-center text-sm transition" title="WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                </a>` : ''}
+                            </div>
+
+                            ${hasBooking ? (isTransport ? `
+                            <button onclick="openBookingModal('${item.id}')" class="px-3 py-1.5 bg-primary text-slate-950 font-bold rounded-xl text-xs hover:opacity-90 transition flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-ticket"></i>
+                                <span>${currentLang === 'en' ? 'Book Seat' : 'حجز مقعد'}</span>
+                            </button>` : `
+                            <button onclick="openDoctorBookingModal('${item.id}')" class="px-3 py-1.5 bg-primary text-slate-950 font-bold rounded-xl text-xs hover:opacity-90 transition flex items-center gap-1 shadow">
+                                <i class="fa-solid fa-calendar-check"></i>
+                                <span>${currentLang === 'en' ? 'Book Clinic' : 'حجز موعد عيادة'}</span>
+                            </button>`) : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            container.innerHTML = html;
+        }
+
+        function openBookingModal(driverId) {
+            const driver = dbItems.find(i => String(i.id) === String(driverId));
+            if (!driver) return;
+            document.getElementById('bookingDriverId').value = driver.id;
+            const infoBox = document.getElementById('bookingModalInfo');
+            if (infoBox) {
+                const booked = driver.bookedSeats || 0;
+                const max = driver.maxSeats || 14;
+                infoBox.innerHTML = `
+                    <p class="font-bold text-white text-xs">${driver.name}</p>
+                    <p class="text-[11px] text-slate-400">${driver.address || 'خط السير'}</p>
+                    <div class="flex items-center justify-between text-[11px] pt-1 border-t border-slate-800">
+                        <span class="text-primary font-bold">المقاعد المحجوزة: ${booked} / ${max}</span>
+                        <span class="text-slate-400">المتاح: ${Math.max(0, max - booked)} مقعد</span>
+                    </div>
+                `;
+            }
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('bookingDate');
+            if (dateInput) {
+                dateInput.value = todayStr;
+                dateInput.min = todayStr;
+            }
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+        }
+
+        async function confirmBooking(e) {
+            e.preventDefault();
+            const driverId = document.getElementById('bookingDriverId').value;
+            const driver = dbItems.find(i => String(i.id) === String(driverId));
+            if (!driver) return;
+
+            const name = document.getElementById('passengerName').value.trim();
+            const phone = document.getElementById('passengerPhone').value.trim();
+            const seats = parseInt(document.getElementById('passengerSeats').value) || 1;
+            const date = document.getElementById('bookingDate').value;
+            const direction = document.getElementById('bookingDirection').value;
+
+            const max = driver.maxSeats || 14;
+            const currentBooked = driver.bookedSeats || 0;
+
+            if (currentBooked + seats > max) {
+                showAlert('عذراً', `المقاعد المتاحة لا تكفي. المتبقي فقط ${Math.max(0, max - currentBooked)} مقعد.`, false);
+                return;
+            }
+
+            if (!driver.passengersList) driver.passengersList = [];
+            driver.passengersList.push({ name, phone, seats, date, direction, timestamp: Date.now() });
+            driver.bookedSeats = currentBooked + seats;
+            driver.updatedAt = Date.now();
+
+            closeBookingModal();
+            await syncWithCloud();
+
+            const waPhone = formatEgyptWhatsApp(driver.whatsapp || driver.phone);
+            const waMsg = encodeURIComponent(`السلام عليكم، تم حجز ${seats} مقعد معك بالسيارة:\nالاسم: ${name}\nالهاتف: ${phone}\nالتاريخ: ${date}\nالاتجاه: ${direction}`);
+            const deepLink = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
+
+            showAlert('تم تأكيد الحجز بنجاح', `تم تسجيل حجزك (${seats} مقعد) مع ${driver.name}. يمكنك تأكيد الحجز بإرسال رسالة مباشرة للسائق عبر واتساب.`, true, deepLink);
+        }
+
+        function openDoctorBookingModal(doctorId) {
+            const doc = dbItems.find(i => String(i.id) === String(doctorId));
+            if (!doc) return;
+            document.getElementById('bookingDoctorId').value = doc.id;
+            const infoBox = document.getElementById('doctorBookingModalInfo');
+            if (infoBox) {
+                infoBox.innerHTML = `
+                    <p class="font-bold text-white text-xs">${doc.name}</p>
+                    <p class="text-[11px] text-slate-400">${doc.address || 'العيادة'}</p>
+                    ${doc.notes ? `<p class="text-[10px] text-amber-400 font-medium">${doc.notes}</p>` : ''}
+                `;
+            }
+            const todayStr = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('docBookingDate');
+            if (dateInput) {
+                dateInput.value = todayStr;
+                dateInput.min = todayStr;
+            }
+            document.getElementById('doctorBookingModal').classList.remove('hidden');
+        }
+
+        function closeDoctorBookingModal() {
+            document.getElementById('doctorBookingModal').classList.add('hidden');
+        }
+
+        async function confirmDoctorBooking(e) {
+            e.preventDefault();
+            const doctorId = document.getElementById('bookingDoctorId').value;
+            const doc = dbItems.find(i => String(i.id) === String(doctorId));
+            if (!doc) return;
+
+            const name = document.getElementById('docPatientName').value.trim();
+            const phone = document.getElementById('docPatientPhone').value.trim();
+            const date = document.getElementById('docBookingDate').value;
+
+            if (!doc.bookings) doc.bookings = [];
+            const bookingNumber = doc.bookings.filter(b => b.date === date).length + 1;
+
+            doc.bookings.push({ name, phone, date, bookingNumber, timestamp: Date.now() });
+            doc.updatedAt = Date.now();
+
+            closeDoctorBookingModal();
+            await syncWithCloud();
+
+            const waPhone = formatEgyptWhatsApp(doc.whatsapp || doc.phone);
+            const waMsg = encodeURIComponent(`السلام عليكم، تم حجز موعد عيادة برقم (${bookingNumber}):\nاسم المريض: ${name}\nرقم الهاتف: ${phone}\nتاريخ الكشف: ${date}`);
+            const deepLink = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
+
+            showAlert('تم حجز الموعد بنجاح', `رقم حجزك في العيادة هو (#${bookingNumber}) بتاريخ ${date}. يرجى إرسال تفاصيل الحجز للعيادة عبر واتساب للتأكيد.`, true, deepLink);
+        }
+
         function populateJoinSubCats() {
             const mainSelect = document.getElementById('joinMainCat');
             const subSelect = document.getElementById('joinSubCat');
