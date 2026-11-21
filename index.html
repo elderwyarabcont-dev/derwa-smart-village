@@ -1491,7 +1491,7 @@
 
             firstArr.forEach(item => {
                 if (item && item.id !== undefined && !deletedIdList.includes(String(item.id))) {
-                    map.set(String(item.id), item);
+                    map.set(String(item.id), { ...item });
                 }
             });
             secondArr.forEach(item => {
@@ -1500,14 +1500,20 @@
                     if (prev) {
                         const prevTime = Number(prev.updatedAt || 0);
                         const itemTime = Number(item.updatedAt || 0);
-                        let winner = (prevTime > itemTime) ? prev : item;
+                        let winner = (prevTime >= itemTime) ? { ...prev } : { ...item };
                         if (prev.image && !winner.image) winner.image = prev.image;
                         if (prev.status === 'approved' || item.status === 'approved') {
                             winner.status = 'approved';
                         }
+                        // الحفاظ على الـ pinCode الأحدث دائماً حتى لو كان فارغاً
+                        if (prevTime >= itemTime && prev.pinCode !== undefined) {
+                            winner.pinCode = prev.pinCode;
+                        } else if (item.pinCode !== undefined) {
+                            winner.pinCode = item.pinCode;
+                        }
                         map.set(String(item.id), winner);
                     } else {
-                        map.set(String(item.id), item);
+                        map.set(String(item.id), { ...item });
                     }
                 }
             });
@@ -1651,53 +1657,35 @@
                 return;
             }
 
+            // إذا كان للجهة قسم فرعي محدد مسبقاً وصحيح ضمن القسم، يتم تثبيته فوراً وممنوع تغييره أو إعادة تخمينه مطلقاً
+            if (item.subCatId && item.subCatId !== 'direct') {
+                const exists = cat.subCategories.some(s => String(s.id) === String(item.subCatId));
+                if (exists) {
+                    return; // تثبيت تام ومطلق لاختيار المستخدم أو المسؤول
+                }
+            }
+
+            // في حال وجود تحويل صريح محدد مسبقاً فقط
             if (item.subCatId && subCatRedirectMap[String(item.subCatId)]) {
                 item.subCatId = subCatRedirectMap[String(item.subCatId)];
+                return;
             }
 
-            let matchedSub = cat.subCategories.find(s => String(s.id) === String(item.subCatId));
-
-            if (!matchedSub && item.subCatId) {
+            // مطابقة بالاسم إن كان مخزناً كنص قديم
+            if (item.subCatId && item.subCatId !== 'direct') {
                 const normSub = normalizeArabicText(item.subCatId);
-                if (normSub === normalizeArabicText('كهربائى') || normSub === normalizeArabicText('كهربائي') || normSub.includes('electric')) {
-                    matchedSub = cat.subCategories.find(s => s.id === 'electric_ians' || normalizeArabicText(s.name).includes('كهربائ'));
-                } else if (normSub === normalizeArabicText('عامل بناء') || normSub.includes('mason') || normSub.includes('build')) {
-                    matchedSub = cat.subCategories.find(s => s.id === 'masons' || normalizeArabicText(s.name).includes('بناء'));
-                } else {
-                    matchedSub = cat.subCategories.find(s =>
-                        normalizeArabicText(s.name) === normSub ||
-                        normalizeArabicText(s.nameEn) === normSub ||
-                        normalizeArabicText(s.name).includes(normSub) ||
-                        normSub.includes(normalizeArabicText(s.name))
-                    );
+                const matchedSub = cat.subCategories.find(s =>
+                    normalizeArabicText(s.name) === normSub ||
+                    normalizeArabicText(s.nameEn || '') === normSub
+                );
+                if (matchedSub) {
+                    item.subCatId = matchedSub.id;
+                    return;
                 }
             }
 
-            if (!matchedSub) {
-                const combinedText = normalizeArabicText(`${item.name || ''} ${item.address || ''}`);
-                for (const s of cat.subCategories) {
-                    const sNorm = normalizeArabicText(s.name);
-                    if (combinedText.includes(sNorm)) {
-                        matchedSub = s;
-                        break;
-                    }
-                }
-                if (!matchedSub && cat.id === 'crafts') {
-                    if (combinedText.includes('كهربا')) matchedSub = cat.subCategories.find(s => s.id === 'electric_ians');
-                    else if (combinedText.includes('سباك')) matchedSub = cat.subCategories.find(s => s.id === 'plumbers');
-                    else if (combinedText.includes('نقاش') || combinedText.includes('محار')) matchedSub = cat.subCategories.find(s => s.id === 'plaster_paint');
-                    else if (combinedText.includes('سيراميك') || combinedText.includes('بلاط') || combinedText.includes('مبلط')) matchedSub = cat.subCategories.find(s => s.id === 'ceramic_tilers');
-                    else if (combinedText.includes('بناء') || combinedText.includes('بنا')) matchedSub = cat.subCategories.find(s => s.id === 'masons');
-                    else if (combinedText.includes('نجار')) matchedSub = cat.subCategories.find(s => s.id === 'armed_carpenters');
-                    else if (combinedText.includes('حداد')) matchedSub = cat.subCategories.find(s => s.id === 'armed_blacksmiths');
-                    else if (combinedText.includes('دش')) matchedSub = cat.subCategories.find(s => s.id === 'dish_tech');
-                    else if (combinedText.includes('الوميتال') || combinedText.includes('صيانه')) matchedSub = cat.subCategories.find(s => s.id === 'maintenance');
-                }
-            }
-
-            if (matchedSub) {
-                item.subCatId = matchedSub.id;
-            } else if (cat.subCategories.length > 0 && (!item.subCatId || item.subCatId === 'direct')) {
+            // افتراضي فقط إذا لم يكن له قسم فرعي أصلاً
+            if (!item.subCatId || item.subCatId === 'direct') {
                 item.subCatId = cat.subCategories[0].id;
             }
         }
@@ -2870,17 +2858,28 @@
         }
 
         function populateJoinSubCats() {
-            const mainId = document.getElementById('joinMainCat').value;
+            const mainSelect = document.getElementById('joinMainCat');
             const subSelect = document.getElementById('joinSubCat');
-            const subWrapper = subSelect ? subSelect.parentElement : null;
+            if (!mainSelect || !subSelect) return;
+
+            const mainId = mainSelect.value;
+            const subWrapper = subSelect.parentElement;
             const cat = dbCategories.find(c => String(c.id) === String(mainId));
-            if (cat && subSelect) {
+
+            const prevChosenSub = subSelect.value;
+
+            if (cat) {
                 if (!cat.subCategories || cat.subCategories.length === 0) {
                     subSelect.innerHTML = `<option value="direct">${currentLang === 'en' ? 'Direct' : 'مباشر'}</option>`;
                     if (subWrapper) subWrapper.classList.add('hidden');
                 } else {
                     if (subWrapper) subWrapper.classList.remove('hidden');
                     subSelect.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${getSubCategoryDisplayName(s)}</option>`).join('');
+
+                    // إذا كان الخيار الذي اختاره المستخدم موجوداً في هذا القسم، نثبته ولا نغيره
+                    if (prevChosenSub && cat.subCategories.some(s => String(s.id) === String(prevChosenSub))) {
+                        subSelect.value = prevChosenSub;
+                    }
                 }
             }
             checkJoinBookingNotice();
@@ -2905,201 +2904,28 @@
             else noticeEl.classList.add('hidden');
         }
 
-        function renderSubCategoryItemsHTML(mainCatId, subCatId, subTitle, containerEl) {
-            const cat = dbCategories.find(c => String(c.id) === String(mainCatId));
-            const subCatObj = cat ? (cat.subCategories || []).find(s => String(s.id) === String(subCatId)) : null;
-            const hasBookingFeature = (subCatObj && subCatObj.hasBooking !== undefined) ? Boolean(subCatObj.hasBooking) : Boolean(cat && cat.hasBooking);
+        function initJoinForm(forceReset = false) {
+            const mainSelect = document.getElementById('joinMainCat');
+            const subSelect = document.getElementById('joinSubCat');
+            if (!mainSelect) return;
 
-            const subItems = dbItems.filter(i => {
-                if (subCatId === 'direct' || !subCatObj) {
-                    return (!i.type || i.type === 'directory') && String(i.mainCatId) === String(mainCatId) && i.status === 'approved';
-                }
-                return doesItemMatchSubCategory(i, mainCatId, subCatObj);
-            });
-            
-            const paginationKey = `${mainCatId}_${subCatId}`;
-            if (subCategoryPaginationState[paginationKey] === undefined) subCategoryPaginationState[paginationKey] = 15;
-            const currentLimit = subCategoryPaginationState[paginationKey];
-            const visibleItems = subItems.slice(0, currentLimit);
-            const hasMore = subItems.length > currentLimit;
-
-            let html = `
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                        ${(cat && cat.subCategories && cat.subCategories.length > 0) ? `
-                        <button onclick="openCategoryDetail('${mainCatId}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center">
-                            <i class="fa-solid fa-arrow-right ml-1.5"></i> ${currentLang === 'en' ? 'Back to Sub-Categories' : 'رجوع للبنود الفرعية'}
-                        </button>` : `<span class="text-xs text-slate-400 font-bold"><i class="${cat ? cat.icon : 'fa-solid fa-folder'} text-primary ml-1"></i> ${currentLang === 'en' ? 'Direct Category' : 'قسم مباشر'}</span>`}
-                        <h4 class="font-bold text-sm text-primary">${subTitle} (${subItems.length} ${currentLang === 'en' ? 'Providers' : 'جهة'})</h4>
-                        ${currentLoggedInAdmin ? `<button onclick="openAdminAddItemToSub('${mainCatId}', '${subCatId}')" class="px-2.5 py-1.5 bg-primary/20 text-primary rounded-xl text-[11px] font-bold"><i class="fa-solid fa-plus ml-1"></i> ${currentLang === 'en' ? 'Add Provider' : 'إضافة جهة'}</button>` : ''}
-                    </div>
-            `;
-
-            if (subItems.length === 0) {
-                html += `<p class="text-xs text-slate-500 py-8 text-center bg-slate-950/60 rounded-2xl border border-slate-800">${currentLang === 'en' ? 'No providers registered under this section yet.' : 'لا توجد جهات مسجلة تحت هذا البند حتى الآن'}</p>`;
-            } else {
-                html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">`;
-                visibleItems.forEach(item => {
-                    const booked = item.bookedSeats !== undefined ? item.bookedSeats : 0;
-                    const max = item.maxSeats || 14;
-                    const remaining = max - booked;
-                    const tripDir = item.currentTripDirection || (currentLang === 'en' ? 'Trip Available' : 'النقلة الحالية متاحة');
-                    
-                    // حساب التقييم الفعلي الدقيق
-                    const ratings = item.ratings || [];
-                    const ratingCount = ratings.length;
-                    const avgScore = ratingCount > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratingCount) : 0;
-                    const roundedStars = Math.round(avgScore);
-                    const starsHtml = ratingCount > 0 
-                        ? '★'.repeat(roundedStars) + '☆'.repeat(5 - roundedStars)
-                        : '☆☆☆☆☆';
-                    const ratingLabel = ratingCount > 0 
-                        ? `(${avgScore.toFixed(1)} / 5 - ${ratingCount} ${currentLang === 'en' ? 'ratings' : 'تقييم'})`
-                        : `(${currentLang === 'en' ? 'New' : 'جديد'})`;
-
-                    const waNumber = formatEgyptWhatsApp(item.whatsapp || item.phone);
-                    const isTransportBooking = mainCatId === 'transport' && hasBookingFeature;
-
-                    html += `
-                        <div class="bg-cardBg border border-slate-800 p-3.5 rounded-xl flex flex-col justify-between space-y-2.5 shadow">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h5 class="font-bold text-sm text-slate-100">${item.name}</h5>
-                                    <div class="flex items-center space-x-1.5 space-x-reverse mt-1 text-[11px]">
-                                        <span class="text-amber-400 font-bold">${starsHtml}</span>
-                                        <span class="text-slate-400 font-mono text-[10px]">${ratingLabel}</span>
-                                    </div>
-                                </div>
-                                <span class="text-[10px] text-slate-300 font-medium bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800"><i class="fa-solid fa-location-dot text-primary ml-1"></i>${item.address}</span>
-                            </div>
-
-                            ${item.notes ? `
-                            <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80 text-[11px] text-slate-300 flex items-start gap-1.5">
-                                <i class="fa-solid fa-note-sticky text-amber-400 mt-0.5 text-xs flex-shrink-0"></i>
-                                <span class="leading-relaxed">${item.notes}</span>
-                            </div>` : ''}
-
-                            <div class="flex items-center space-x-1 space-x-reverse pt-1 pb-1">
-                                <span class="text-[10px] text-slate-400">${currentLang === 'en' ? 'Rate service:' : 'قيم الخدمة:'}</span>
-                                <button onclick="rateService('${item.id}', 1)" title="1 نجمة" class="text-slate-500 hover:text-amber-400 px-1 text-sm transition">★</button>
-                                <button onclick="rateService('${item.id}', 2)" title="2 نجمتان" class="text-slate-500 hover:text-amber-400 px-1 text-sm transition">★</button>
-                                <button onclick="rateService('${item.id}', 3)" title="3 نجوم" class="text-slate-500 hover:text-amber-400 px-1 text-sm transition">★</button>
-                                <button onclick="rateService('${item.id}', 4)" title="4 نجوم" class="text-slate-500 hover:text-amber-400 px-1 text-sm transition">★</button>
-                                <button onclick="rateService('${item.id}', 5)" title="5 نجوم" class="text-slate-500 hover:text-amber-400 px-1 text-sm transition">★</button>
-                            </div>
-
-                            ${isTransportBooking ? `
-                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1.5 text-[11px]">
-                                <div class="text-primary font-bold">${currentLang === 'en' ? 'Direction:' : 'اتجاه السير:'} ${tripDir}</div>
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <span class="text-slate-400">${currentLang === 'en' ? 'Seats:' : 'الحجز:'}</span> 
-                                        <span class="font-bold text-primary">${booked} ${currentLang === 'en' ? 'booked' : 'محجوز'}</span> / 
-                                        <span class="text-amber-400">${remaining} ${currentLang === 'en' ? 'left' : 'متبقي'}</span>
-                                    </div>
-                                    <button onclick="openBookingModal('${item.id}')" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">${currentLang === 'en' ? 'Book Seat' : 'حجز مقعد'}</button>
-                                </div>
-                            </div>` : ''}
-
-                            ${hasBookingFeature && !isTransportBooking ? `
-                            <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-[11px]">
-                                <div><span class="text-slate-400">${currentLang === 'en' ? 'Bookings:' : 'الحجوزات:'}</span> <span class="font-bold text-primary mr-1">${item.bookings ? item.bookings.length : 0} ${currentLang === 'en' ? 'registered' : 'مسجل'}</span></div>
-                                <button onclick="openDoctorBookingModal('${item.id}')" class="px-3 py-1 bg-primary text-slate-950 font-bold rounded-lg transition shadow">${currentLang === 'en' ? 'Book Appointment' : 'حجز موعد'}</button>
-                            </div>` : ''}
-
-                            <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-xs">
-                                <a href="tel:${item.phone}" class="hover:text-primary font-mono flex items-center"><i class="fa-solid fa-phone text-primary ml-1"></i> ${item.phone}</a>
-                                ${waNumber ? `<a href="https://wa.me/${waNumber}" target="_blank" class="bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-lg font-bold transition flex items-center"><i class="fa-brands fa-whatsapp ml-1"></i> ${currentLang === 'en' ? 'WhatsApp' : 'واتساب'}</a>` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-                if (hasMore) {
-                    const safeSubTitle = String(subTitle).replace(/'/g, "\\'");
-                    html += `<div class="pt-4 text-center"><button onclick="loadMoreSubCategoryItems('${mainCatId}', '${subCatId}', '${safeSubTitle}')" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-primary font-bold rounded-2xl text-xs transition shadow-lg border border-slate-700"><i class="fa-solid fa-chevron-down ml-1.5"></i> ${currentLang === 'en' ? `Show More (${subItems.length - currentLimit} remaining)` : `عرض المزيد من الأشخاص والجهات (${subItems.length - currentLimit} متبقي)`}</button></div>`;
-                }
-            }
-            html += `</div>`;
-            containerEl.innerHTML = html;
-        }
-
-        function loadMoreSubCategoryItems(mainCatId, subCatId, subTitle) {
-            const key = `${mainCatId}_${subCatId}`;
-            subCategoryPaginationState[key] = (subCategoryPaginationState[key] || 15) + 15;
-            renderSubCategoryItemsHTML(mainCatId, subCatId, subTitle, document.getElementById('categoryDetailContent'));
-        }
-
-        function rateService(itemId, stars) {
-            const item = dbItems.find(i => String(i.id) === String(itemId));
-            if (!item) return;
-
-            // التحقق من تقييم المستخدم محلياً لمنع التكرار العشوائي
-            const ratedStorageKey = `derwa_rated_${itemId}`;
-            const previousScore = localStorage.getItem(ratedStorageKey);
-
-            if (!item.ratings) item.ratings = [];
-
-            if (previousScore) {
-                // تعديل التقييم السابق
-                const prevIdx = item.ratings.indexOf(Number(previousScore));
-                if (prevIdx > -1) {
-                    item.ratings.splice(prevIdx, 1);
-                }
-            }
-
-            item.ratings.push(Number(stars));
-            item.updatedAt = Date.now();
-            try { localStorage.setItem(ratedStorageKey, String(stars)); } catch(e) {}
-
-            const ratingCount = item.ratings.length;
-            const newAvg = (item.ratings.reduce((a, b) => a + b, 0) / ratingCount).toFixed(1);
-
-            syncWithCloud();
-            
-            // تحديث نافذة التفاصيل إذا كانت مفتوحة
-            const detailModal = document.getElementById('categoryDetailModal');
-            if (detailModal && !detailModal.classList.contains('hidden')) {
-                const subCatId = item.subCatId || 'direct';
-                const cat = dbCategories.find(c => String(c.id) === String(item.mainCatId));
-                const subObj = cat && cat.subCategories ? cat.subCategories.find(s => String(s.id) === String(subCatId)) : null;
-                const subTitle = subObj ? getSubCategoryDisplayName(subObj) : (cat ? getCategoryDisplayName(cat) : '');
-                renderSubCategoryItemsHTML(item.mainCatId, subCatId, subTitle, document.getElementById('categoryDetailContent'));
-            }
-
-            showAlert(
-                currentLang === 'en' ? 'Thank You!' : 'شكراً لتقييمك', 
-                currentLang === 'en' 
-                    ? `Your rating (${stars} stars) has been recorded! Current average: ${newAvg} / 5 (${ratingCount} ratings).` 
-                    : `تم تسجيل تقييمك (${stars} نجوم) بنجاح! متوسط التقييم الحالي: ${newAvg} من 5 (إجمالي ${ratingCount} مقيمين).`
-            );
-        }
-
-        function openAdminAddItemToSub(mainCatId, subCatId) {
-            closeCategoryModal();
-            if (currentLoggedInAdmin) {
-                openAdminAddServiceModal();
-                document.getElementById('admFormMainCat').value = mainCatId;
-                populateAdmSubCats();
-                if (subCatId && subCatId !== 'direct') {
-                    document.getElementById('admFormSubCat').value = subCatId;
-                }
-                onAdminSubCatChange();
+            // إذا كان المستخدم يتصفح أو يملأ النموذج بالفعل، نمنع المزامنة الدورية من مسح اختياراته
+            if (!forceReset && mainSelect.value && subSelect && subSelect.value) {
                 return;
             }
-            switchTab('join');
-            document.getElementById('joinMainCat').value = mainCatId;
-            populateJoinSubCats();
-            document.getElementById('joinSubCat').value = subCatId;
-        }
 
-        function initJoinForm() {
-            const mainSelect = document.getElementById('joinMainCat');
-            if (mainSelect) {
-                const prevVal = mainSelect.value;
-                mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${getCategoryDisplayName(c)}</option>`).join('');
-                if (prevVal && dbCategories.some(c => String(c.id) === String(prevVal))) mainSelect.value = prevVal;
-                populateJoinSubCats();
+            const prevMain = mainSelect.value;
+            const prevSub = subSelect ? subSelect.value : null;
+
+            mainSelect.innerHTML = dbCategories.map(c => `<option value="${c.id}">${getCategoryDisplayName(c)}</option>`).join('');
+            if (prevMain && dbCategories.some(c => String(c.id) === String(prevMain))) {
+                mainSelect.value = prevMain;
+            }
+
+            populateJoinSubCats();
+
+            if (prevSub && subSelect && Array.from(subSelect.options).some(o => String(o.value) === String(prevSub))) {
+                subSelect.value = prevSub;
             }
         }
 
@@ -3142,6 +2968,10 @@
             document.getElementById('joinPhone').value = '';
             document.getElementById('joinAddress').value = '';
             if (document.getElementById('joinNotes')) document.getElementById('joinNotes').value = '';
+            
+            // إعادة ضبط النموذج بعد الإرسال الناجح فقط
+            initJoinForm(true);
+
             showAlert('تم إرسال الطلب للمسؤول', needsBooking ? 'تم إرسال طلبك بنجاح. تواصل مع الإدارة لطلب PIN code لإدارة الحجوزات الخاصة بك.' : 'تم إرسال طلبك بنجاح إلى لوحة تحكم المسؤول للمراجعة والموافقة.');
             switchTab('home');
         }
@@ -3393,9 +3223,10 @@
             if (item) {
                 item.pinCode = newPin;
                 item.updatedAt = Date.now();
+                saveLocalCache();
                 await syncWithCloud();
                 renderAdminPinsTable();
-                showAlert('تم الحفظ بنجاح', `تم تحديث الرمز السري للجهة (${item.name}) إلى [${newPin || 'فارغ'}] ومزامنته سحابياً لجميع الهواتف.`);
+                showAlert('تم الحفظ بنجاح', `تم تثبيت الرمز السري للجهة (${item.name}) إلى [${newPin || 'فارغ'}] ومزامنته بنجاح.`);
             }
         }
 
@@ -3404,6 +3235,7 @@
             if (item) {
                 item.pinCode = '';
                 item.updatedAt = Date.now();
+                saveLocalCache();
                 await syncWithCloud();
                 renderAdminPinsTable();
                 showAlert('تم المسح', `تم حذف كود PIN الخاص بـ (${item.name}) بنجاح.`);
@@ -3611,16 +3443,20 @@
             if (!item) return;
             document.getElementById('editItemId').value = item.id;
             document.getElementById('editItemName').value = item.name || '';
-            document.getElementById('editItemMainCat').innerHTML = dbCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            document.getElementById('editItemMainCat').value = item.mainCatId;
-            populateEditItemSubCats();
-            if (item.subCatId) document.getElementById('editItemSubCat').value = item.subCatId;
+            
+            const mainSel = document.getElementById('editItemMainCat');
+            mainSel.innerHTML = dbCategories.map(c => `<option value="${c.id}">${getCategoryDisplayName(c)}</option>`).join('');
+            mainSel.value = item.mainCatId;
+            
+            // تعبئة الأقسام الفرعية مع تثبيت القسم الحالي للجهة بدقة ومنع قفزه
+            populateEditItemSubCats(item.subCatId);
+            
             document.getElementById('editItemPhone').value = item.phone || '';
             document.getElementById('editItemWhatsapp').value = item.whatsapp || '';
             document.getElementById('editItemAddress').value = item.address || '';
             if (document.getElementById('editItemNotes')) document.getElementById('editItemNotes').value = item.notes || '';
             
-            // إظهار حقل الـ PIN دائماً للمسؤول مع تعبئة القيمة الحالية
+            // إظهار حقل الـ PIN وتثبيت قيمته الحالية
             const editPinWrapper = document.getElementById('editPinWrapper');
             const editItemPin = document.getElementById('editItemPin');
             if (editPinWrapper && editItemPin) {
@@ -3631,12 +3467,20 @@
             document.getElementById('adminEditItemModal').classList.remove('hidden');
         }
         function closeAdminEditItemModal() { document.getElementById('adminEditItemModal').classList.add('hidden'); }
-        function populateEditItemSubCats() {
+        
+        function populateEditItemSubCats(targetSubCatId = null) {
             const mainId = document.getElementById('editItemMainCat').value;
             const subSel = document.getElementById('editItemSubCat');
             const cat = dbCategories.find(c => String(c.id) === String(mainId));
             if (cat && subSel) {
-                subSel.innerHTML = (!cat.subCategories || cat.subCategories.length === 0) ? `<option value="direct">مباشر</option>` : cat.subCategories.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                if (!cat.subCategories || cat.subCategories.length === 0) {
+                    subSel.innerHTML = `<option value="direct">${currentLang === 'en' ? 'Direct' : 'مباشر'}</option>`;
+                } else {
+                    subSel.innerHTML = cat.subCategories.map(s => `<option value="${s.id}">${getSubCategoryDisplayName(s)}</option>`).join('');
+                    if (targetSubCatId && cat.subCategories.some(s => String(s.id) === String(targetSubCatId))) {
+                        subSel.value = targetSubCatId;
+                    }
+                }
             }
         }
 
@@ -3645,25 +3489,34 @@
             const itemId = document.getElementById('editItemId').value;
             const item = dbItems.find(i => String(i.id) === String(itemId));
             if (!item) return;
+            
+            const enteredPin = document.getElementById('editItemPin') ? document.getElementById('editItemPin').value.trim() : '';
+            if (enteredPin && enteredPin.length !== 4) {
+                showAlert('خطأ', 'الرمز السري PIN يجب أن يتكون من 4 أرقام بالضبط (مثال: 5678).', false);
+                return;
+            }
+
+            const chosenSubCat = document.getElementById('editItemSubCat').value || 'direct';
+
             item.name = document.getElementById('editItemName').value.trim();
             item.mainCatId = document.getElementById('editItemMainCat').value;
-            item.subCatId = document.getElementById('editItemSubCat').value || 'direct';
+            item.subCatId = chosenSubCat;
             item.phone = document.getElementById('editItemPhone').value.trim();
             item.whatsapp = formatEgyptWhatsApp(document.getElementById('editItemWhatsapp').value.trim() || item.phone);
             item.address = document.getElementById('editItemAddress').value.trim();
             if (document.getElementById('editItemNotes')) item.notes = document.getElementById('editItemNotes').value.trim();
-            const enteredPin = document.getElementById('editItemPin') ? document.getElementById('editItemPin').value.trim() : '';
-            if (enteredPin && enteredPin.length !== 4) {
-                showAlert('خطأ', 'الرمز السري PIN يجب أن يتكون من 4 أرقام.', false);
-                return;
-            }
+            
+            // تثبيت الـ PIN كود والوقت لمنع رجوعه للقيمة القديمة نهائياً
             item.pinCode = enteredPin;
             item.updatedAt = Date.now();
+            
+            saveLocalCache();
             closeAdminEditItemModal();
             await syncWithCloud();
             renderAdminApprovalTable();
             renderAdminPinsTable();
-            showAlert('تم التعديل', `تم حفظ بيانات الجهة وتحديث كود PIN ومزامنتها سحابياً.`);
+            renderAdminDirectoryItemsManager();
+            showAlert('تم حفظ التعديلات بنجاح', `تم تثبيت كود PIN الجديد [${item.pinCode || 'فارغ'}] لـ (${item.name}) وحفظه نهائياً.`);
         }
 
         async function approveSubmission(tableType, id) {
@@ -3816,99 +3669,7 @@
             if (quickContainer) quickContainer.innerHTML = html;
         }
 
-        function applyTheme(mode) {
-            document.body.classList.toggle('light-mode', mode === 'light');
-            showAlert('المظهر', 'تم تطبيق المظهر بنجاح.');
-        }
         function applyColor(hex) { document.documentElement.style.setProperty('--primary-color', hex); showAlert('اللون', 'تم تغيير اللون الأساسي.'); }
-        function applyLanguage(lang) {
-            currentLang = (lang === 'en') ? 'en' : 'ar';
-            document.documentElement.setAttribute('lang', currentLang);
-            document.documentElement.setAttribute('dir', currentLang === 'en' ? 'ltr' : 'rtl');
-
-            const t = appTranslations[currentLang];
-            const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
-
-            setTxt('appHeaderTitle', t.appHeader);
-            setTxt('heroTitle', t.heroTitle);
-            setTxt('heroSubtitle', t.heroSubtitle);
-            setTxt('heroLocationText', t.heroLocation);
-            setTxt('heroDescText', t.heroDesc);
-            const sInput = document.getElementById('searchInput');
-            if (sInput) sInput.placeholder = t.searchPlaceholder;
-            setTxt('statLabelOffers', t.statOffers);
-            setTxt('statLabelCats', t.statCats);
-            setTxt('statLabelServices', t.statServices);
-            setTxt('bannerAdminMsgTitle', t.adminTickerTitle);
-            setTxt('bannerOffersTitle', t.offersTickerTitle);
-            setTxt('bannerJobsTitle', t.jobsTickerTitle);
-            setTxt('directoryTitle', t.dirTitle);
-            setTxt('directorySubtitle', t.dirSub);
-            setTxt('homeRefreshBtnText', t.refreshBtn);
-            setTxt('appVersionBadge', t.versionBadge);
-
-            // شريط التنقل السفلي
-            setTxt('navText_home', t.navHome);
-            setTxt('navText_offers', t.navOffers);
-            setTxt('navText_jobs', t.navJobs);
-            setTxt('navText_join', t.navJoin);
-            setTxt('navText_more', t.navMore);
-
-            // صفحة العروض والوظائف
-            setTxt('offersHeaderTitle', t.offersHeader);
-            setTxt('offersHeaderSub', t.offersSub);
-            setTxt('addOfferBtnText', t.addOffer);
-            setTxt('jobsHeaderTitle', t.jobsHeader);
-            setTxt('jobsHeaderSub', t.jobsSub);
-            setTxt('addJobBtnText', t.addJob);
-
-            // نموذج الانضمام
-            setTxt('joinHeaderTitle', currentLang === 'en' ? 'Suggest / Join the Directory' : 'اقتراح إضافة / انضم إلى الدليل');
-            setTxt('joinHeaderSub', currentLang === 'en' ? 'Register your name, category, and phone number for admin review.' : 'سجل بياناتك (الاسم، القسم الرئيسي، الفرعي، العنوان التفصيلي، الهاتف). تخضع للمراجعة قبل الظهور العام.');
-            setTxt('labelJoinName', currentLang === 'en' ? 'Name or Shop / Clinic / Pharmacy *' : 'الاسم أو اسم المحل / العيادة / الصيدلية *');
-            setTxt('labelJoinMainCat', currentLang === 'en' ? 'Main Category *' : 'القسم الرئيسي *');
-            setTxt('labelJoinSubCat', currentLang === 'en' ? 'Sub-Category *' : 'القسم الفرعي *');
-            setTxt('labelJoinPhone', currentLang === 'en' ? 'Phone Number *' : 'رقم الهاتف *');
-            setTxt('labelJoinWhatsapp', currentLang === 'en' ? 'WhatsApp Number (Optional)' : 'رقم واتساب (اختياري)');
-            setTxt('labelJoinAddress', currentLang === 'en' ? 'Detailed Address *' : 'العنوان التفصيلي / رقم العيادة أو المعمل / خط السير *');
-            setTxt('labelJoinNotes', currentLang === 'en' ? 'Additional Notes (Working hours, service details...)' : 'ملاحظات إضافية (مواعيد العمل، تفاصيل الخدمة... اختياري)');
-            setTxt('submitJoinBtnText', currentLang === 'en' ? 'Submit Application for Cloud Review' : 'إرسال الطلب للإدارة للمراجعة والاعتماد سحابياً');
-
-            // تبويب وقائمة المزيد بالكامل
-            setTxt('moreHeaderTitle', t.moreTitle);
-            setTxt('moreHeaderSub', t.moreSub);
-            const bannerAppEl = document.querySelector('#tabMore .font-bold.text-base');
-            if (bannerAppEl) bannerAppEl.innerText = t.bannerAppTitle;
-            setTxt('bannerVillageInfo', t.bannerVillageInfo);
-
-            setTxt('menuNotifText', t.menuNotif);
-            setTxt('menuSettingsText', t.menuSettings);
-            setTxt('menuDeveloperText', t.menuDeveloper);
-            setTxt('menuAboutText', t.menuAbout);
-            setTxt('menuPrivacyText', t.menuPrivacy);
-            setTxt('menuContactText', t.menuContact);
-            setTxt('menuShareText', t.menuShare);
-            setTxt('menuProviderDashText', t.menuProvider);
-            setTxt('menuAdminLoginText', t.menuAdmin);
-            setTxt('menuSupervisorLoginText', t.menuSupervisor);
-
-            // أزرار اللغة في نافذة الإعدادات
-            const arBtn = document.getElementById('langArBtn');
-            const enBtn = document.getElementById('langEnBtn');
-            if (arBtn && enBtn) {
-                if (currentLang === 'en') {
-                    enBtn.className = "p-3 bg-slate-950 border-2 border-primary-custom text-primary-custom rounded-xl font-bold transition flex items-center justify-center gap-2";
-                    arBtn.className = "p-3 bg-slate-950 border border-slate-800 rounded-xl text-center transition flex items-center justify-center gap-2";
-                } else {
-                    arBtn.className = "p-3 bg-slate-950 border-2 border-primary-custom text-primary-custom rounded-xl font-bold transition flex items-center justify-center gap-2";
-                    enBtn.className = "p-3 bg-slate-950 border border-slate-800 rounded-xl text-center transition flex items-center justify-center gap-2";
-                }
-            }
-
-            try { localStorage.setItem('derwa_user_lang', currentLang); } catch(e) {}
-            initJoinForm();
-            refreshAllViews();
-        }
 
         function openDeveloperModal() { document.getElementById('developerModal').classList.remove('hidden'); }
         function closeDeveloperModal() { document.getElementById('developerModal').classList.add('hidden'); }
