@@ -3260,6 +3260,46 @@
         }
         function closeAddOfferModal() { document.getElementById('addOfferModal').classList.add('hidden'); }
 
+        function handleOfferImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200; // جودة HD عالية الوضوح
+
+                    if (width > height && width > maxDim) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                    const base64Input = document.getElementById('offerImageBase64');
+                    const previewBox = document.getElementById('offerImagePreviewBox');
+                    const previewEl = document.getElementById('offerImagePreviewEl');
+
+                    if (base64Input) base64Input.value = compressedBase64;
+                    if (previewEl) previewEl.src = compressedBase64;
+                    if (previewBox) previewBox.classList.remove('hidden');
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
         async function submitOffer(e) {
             e.preventDefault();
             const title = document.getElementById('offerTitle').value.trim();
